@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "119024185111",
+    "project_id": "qltg001",
+    "storage_bucket": "qltg001.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119024185111:android:b1f9c89010f3ab0d849152",
+        "android_client_info": {
+          "package_name": "dpphong.ntu.appqlcv.ck"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1gQL6588TSo2hkhcoFHvKxFAEDIYxrMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
