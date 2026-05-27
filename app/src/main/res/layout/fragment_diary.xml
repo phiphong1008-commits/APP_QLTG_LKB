@@ -10,8 +10,9 @@
         layout="@layout/layout_header" />
 
     <ScrollView
-        android:layout_width="409dp"
-        android:layout_height="630dp"
+        android:layout_width="411dp"
+        android:layout_height="732dp"
+        android:layout_marginTop="20dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -27,6 +28,7 @@
                 android:id="@+id/tv_diary_date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
                 android:layout_marginBottom="24dp"
                 android:gravity="center"
                 android:text="Hôm nay, 27/05/2026"

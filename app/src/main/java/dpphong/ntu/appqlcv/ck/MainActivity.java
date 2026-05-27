@@ -47,11 +47,11 @@ public class MainActivity extends AppCompatActivity {
                     select_frag = new CalendarFragment(); // Màn hình bộ lịch ô vuông lồng icon
                 }
                 else if (itemid == R.id.todo) {
-                    // select_frag = new AccountFragment(); // Màn hình Tài khoản (bạn tạo sau)
+                     select_frag = new TodoFragment(); // Màn hình Tài khoản (bạn tạo sau)
                 }
 
                 else if (itemid == R.id.diary) {
-                    // select_frag = new DiaryFragment(); // Màn hình Nhật ký/Công việc (bạn tạo sau)
+                     select_frag = new DiaryFragment(); // Màn hình Nhật ký/Công việc (bạn tạo sau)
                 }
                 else if (itemid == R.id.account) {
                      select_frag = new LoginFragment(); // Màn hình Tài khoản (bạn tạo sau)
