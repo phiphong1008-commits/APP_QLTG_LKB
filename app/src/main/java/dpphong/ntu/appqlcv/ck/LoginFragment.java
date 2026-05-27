@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -43,6 +44,12 @@ public class LoginFragment extends Fragment {
         // Xử lý chuyển sang màn hình Đăng ký
         tvGoToRegister.setOnClickListener(v -> {
             // Viết code chuyển sang RegisterFragment của bạn ở đây
+            FragmentManager fm = getParentFragmentManager();
+
+            fm.beginTransaction()
+                    .replace(R.id.calendar_container, new RegisterFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         return view;

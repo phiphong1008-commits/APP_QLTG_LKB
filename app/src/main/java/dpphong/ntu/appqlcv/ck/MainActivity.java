@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
                     // select_frag = new DiaryFragment(); // Màn hình Nhật ký/Công việc (bạn tạo sau)
                 }
                 else if (itemid == R.id.account) {
-                    // select_frag = new AccountFragment(); // Màn hình Tài khoản (bạn tạo sau)
+                     select_frag = new LoginFragment(); // Màn hình Tài khoản (bạn tạo sau)
                 }
 
                 // 4. Nạp Fragment được chọn vào đúng hộp chứa calendar_container trong activity_main.xml

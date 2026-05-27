@@ -3,20 +3,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:icon="@drawable/meeting_event_christmas_agenda_calender_schedule_date_calendar_time_icon_258647"
-        android:title="Calendar"
         android:id="@+id/calendar"
-        />
+        android:icon="@drawable/meeting_event_christmas_agenda_calender_schedule_date_calendar_time_icon_258647"
+        android:title="Lịch " />
     <item
+        android:id="@+id/todo"
         android:icon="@drawable/list_task_tasklist_checklist_check_icon_145964"
-        android:title="Todo"
-        android:id="@+id/todo"/>
+        android:title="Công việc" />
     <item
+        android:id="@+id/diary"
         android:icon="@drawable/notebook_school_study_book_diary_stationary_icon_255801"
-        android:title="Diary"
-        android:id="@+id/diary"/>
+        android:title="Nhật ký" />
     <item
+        android:id="@+id/account"
         android:icon="@drawable/account_avatar_face_man_people_profile_user_icon_123197"
-        android:title="Account"
-        android:id="@+id/account"/>
+        android:title="Tài khoản" />
 </menu>
