@@ -24,7 +24,10 @@ public class CalendarFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar, container, false);
+        TextView tvHeaderTitle = view.findViewById(R.id.tv_header_title);
 
+        // 2. Cài đặt lại chữ theo đúng tên Fragment
+        tvHeaderTitle.setText("Lịch");
         tvMonthYear = view.findViewById(R.id.tv_month_year);
         gvCalendar = view.findViewById(R.id.gv_calendar);
 
