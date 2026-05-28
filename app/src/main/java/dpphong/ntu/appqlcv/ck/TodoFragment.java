@@ -58,7 +58,7 @@ public class TodoFragment extends Fragment {
         rgPriority = view.findViewById(R.id.rg_priority);
         btnSave = view.findViewById(R.id.btn_save_task);
 
-        tvHeaderTitle.setText("Thêm Công Việc");
+        tvHeaderTitle.setText("Công Việc");
 
         tvDate.setOnClickListener(v -> showDatePicker());
         tvTime.setOnClickListener(v -> showTimePicker());
