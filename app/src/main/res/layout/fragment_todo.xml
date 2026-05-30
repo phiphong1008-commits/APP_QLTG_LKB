@@ -74,25 +74,44 @@
                     android:orientation="horizontal">
 
                     <RadioButton
-                        android:id="@+id/icon_work"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
+                        android:id="@+id/rb_icon_study"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/selector_icon_bg"
                         android:button="@null"
-                        android:drawableTop="@android:drawable/ic_menu_camera"
-                        android:paddingTop="12dp" />
+                        android:drawableTop="@drawable/ic_book"
+                        android:padding="12dp" />
 
                     <RadioButton
-                        android:id="@+id/icon_study"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
+                        android:id="@+id/rb_icon_work"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:layout_marginEnd="12dp"
                         android:background="@drawable/selector_icon_bg"
                         android:button="@null"
-                        android:drawableTop="@android:drawable/ic_menu_edit"
-                        android:paddingTop="12dp" />
+                        android:drawableTop="@drawable/ic_work"
+                        android:padding="12dp" />
 
+                    <RadioButton
+                        android:id="@+id/rb_icon_home"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/selector_icon_bg"
+                        android:button="@null"
+                        android:drawableTop="@drawable/ic_home"
+                        android:padding="12dp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_icon_event"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/selector_icon_bg"
+                        android:button="@null"
+                        android:drawableTop="@drawable/ic_event"
+                        android:padding="12dp" />
                 </RadioGroup>
             </HorizontalScrollView>
 
