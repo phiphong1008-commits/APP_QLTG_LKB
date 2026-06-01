@@ -22,10 +22,9 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            app:tint="@color/colorTextSecondary"
             android:contentDescription="Quay lại màn hình trước"
-            />
+            android:src="@drawable/ic_back"
+            app:tint="@color/colorTextSecondary" />
 
         <TextView
             android:id="@+id/tv_header_title"
@@ -62,7 +61,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tên công việc"
+                    android:text="Tên công việc *"
                     android:textColor="@color/colorTextSecondary"
                     android:textStyle="bold" />
 
@@ -72,14 +71,76 @@
                     android:layout_height="52dp"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_rounded_input"
-                    android:hint="Nhập tiêu đề..."
+                    android:hint="Vd: Mua sữa, Làm bài tập..."
                     android:paddingHorizontal="16dp"
                     android:textColor="@color/colorTextPrimary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Chọn loại công việc (Icon)"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textStyle="bold" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+
+                    <RadioGroup
+                        android:id="@+id/rg_task_icons"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rb_icon_study"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/selector_icon_bg"
+                            android:button="@null"
+                            android:drawableTop="@drawable/ic_book"
+                            android:padding="12dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_icon_work"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/selector_icon_bg"
+                            android:button="@null"
+                            android:checked="true"
+                            android:drawableTop="@drawable/ic_work"
+                            android:padding="12dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_icon_home"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/selector_icon_bg"
+                            android:button="@null"
+                            android:drawableTop="@drawable/ic_home"
+                            android:padding="12dp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_icon_event"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/selector_icon_bg"
+                            android:button="@null"
+                            android:drawableTop="@drawable/ic_event"
+                            android:padding="12dp" />
+                    </RadioGroup>
+                </HorizontalScrollView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
                     android:text="Mô tả chi tiết"
                     android:textColor="@color/colorTextSecondary"
                     android:textStyle="bold" />
@@ -91,7 +152,8 @@
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_rounded_input"
                     android:gravity="top|start"
-                    android:hint="Thêm mô tả..."
+                    android:hint="Ghi chú thêm cho công việc này..."
+                    android:inputType="textMultiLine"
                     android:padding="16dp"
                     android:textColor="@color/colorTextPrimary" />
 
@@ -125,9 +187,8 @@
                             android:gravity="center_vertical"
                             android:paddingHorizontal="16dp"
                             android:text="Chọn ngày"
-                            android:textColor="@color/colorTextPrimary"
-                            app:drawableEndCompat="@android:drawable/ic_menu_my_calendar"
-                            app:drawableTint="@color/colorPrimary" />
+                            android:textColor="@color/colorPrimary"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -153,9 +214,8 @@
                             android:gravity="center_vertical"
                             android:paddingHorizontal="16dp"
                             android:text="Chọn giờ"
-                            android:textColor="@color/colorTextPrimary"
-                            app:drawableEndCompat="@android:drawable/ic_menu_recent_history"
-                            app:drawableTint="@color/colorPrimary" />
+                            android:textColor="@color/colorPrimary"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 

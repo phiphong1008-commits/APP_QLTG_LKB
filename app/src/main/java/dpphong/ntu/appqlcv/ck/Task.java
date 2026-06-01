@@ -12,6 +12,7 @@ public class Task implements Serializable {
     private String time;
     private String priority;
     private boolean isCompleted;
+    private String icon;
     private long timestamp;
     private String userId;
 
@@ -19,7 +20,7 @@ public class Task implements Serializable {
     public Task() {
     }
 
-    public Task(String id, String title, String description, String date, String time, String priority, boolean isCompleted, long timestamp, String userId) {
+    public Task(String id, String title, String description, String date, String time, String priority,String icon, boolean isCompleted, long timestamp, String userId) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -29,6 +30,7 @@ public class Task implements Serializable {
         this.isCompleted = isCompleted;
         this.timestamp = timestamp;
         this.userId = userId;
+        this.icon = icon;
     }
 
     // --- CÁC HÀM GETTER VÀ SETTER ---
@@ -41,7 +43,13 @@ public class Task implements Serializable {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getIcon() {
+        return icon;
+    }
 
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
 

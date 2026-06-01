@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_diary_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginBottom="8dp"
+    android:layout_marginVertical="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp">
 
@@ -13,33 +17,38 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#FFF9C4"> <TextView
-        android:id="@+id/tv_diary_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tiêu đề nhật ký"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#333333"/>
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/tv_diary_date"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="2026-05-31"
-            android:textSize="12sp"
-            android:textColor="#757575"
+            android:textColor="@color/colorPrimary"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+        <TextView
+            android:id="@+id/tv_diary_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="8dp"/>
+            android:text="Tiêu đề nhật ký"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_diary_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Nội dung nhật ký..."
-            android:textSize="14sp"
-            android:textColor="#555555"
-            android:maxLines="3"
-            android:ellipsize="end"/> </LinearLayout>
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Đoạn trích dẫn nội dung nhật ký sẽ hiển thị ở đây. Nếu dài quá hai dòng nó sẽ tự động bị cắt đi..."
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp" />
+
+    </LinearLayout>
 </androidx.cardview.widget.CardView>

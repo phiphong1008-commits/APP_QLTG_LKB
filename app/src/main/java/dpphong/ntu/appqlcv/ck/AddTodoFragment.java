@@ -33,6 +33,7 @@ public class AddTodoFragment extends Fragment {
     private EditText edtTitle, edtDesc;
     private TextView tvDate, tvTime, tvHeaderTitle;
     private RadioGroup rgPriority;
+    private RadioGroup rgTaskIcons; // Khai báo RadioGroup cho Icon
     private Button btnSave;
 
     private final Calendar myCalendar = Calendar.getInstance();
@@ -60,6 +61,8 @@ public class AddTodoFragment extends Fragment {
         btnSave = view.findViewById(R.id.btn_save_task);
         ImageButton btnBack = view.findViewById(R.id.btnBack);
 
+        rgTaskIcons = view.findViewById(R.id.rg_task_icons); // Ánh xạ rg_task_icons
+
         tvDate.setOnClickListener(v -> showDatePicker());
         tvTime.setOnClickListener(v -> showTimePicker());
         btnSave.setOnClickListener(v -> saveTaskToFirebase());
@@ -86,11 +89,22 @@ public class AddTodoFragment extends Fragment {
                     tvTime.setText("Chọn giờ");
                 }
 
+                // Đổ dữ liệu mức độ ưu tiên
                 if (taskToEdit.getPriority() != null) {
                     switch (taskToEdit.getPriority()) {
                         case "Cao": rgPriority.check(R.id.rb_high); break;
                         case "Thấp": rgPriority.check(R.id.rb_low); break;
                         default: rgPriority.check(R.id.rb_medium); break;
+                    }
+                }
+
+                // Đổ dữ liệu Icon cũ lên giao diện
+                if (taskToEdit.getIcon() != null) {
+                    switch (taskToEdit.getIcon()) {
+                        case "study": rgTaskIcons.check(R.id.rb_icon_study); break;
+                        case "home": rgTaskIcons.check(R.id.rb_icon_home); break;
+                        case "event": rgTaskIcons.check(R.id.rb_icon_event); break;
+                        default: rgTaskIcons.check(R.id.rb_icon_work); break;
                     }
                 }
             }
@@ -182,6 +196,13 @@ public class AddTodoFragment extends Fragment {
         if (checkedId == R.id.rb_high) priority = "Cao";
         else if (checkedId == R.id.rb_low) priority = "Thấp";
 
+        // Lấy giá trị Icon người dùng đang chọn
+        String iconType = "work"; // Mặc định là work
+        int checkedIconId = rgTaskIcons.getCheckedRadioButtonId();
+        if (checkedIconId == R.id.rb_icon_study) iconType = "study";
+        else if (checkedIconId == R.id.rb_icon_home) iconType = "home";
+        else if (checkedIconId == R.id.rb_icon_event) iconType = "event";
+
         if (taskToEdit != null) {
             // ==========================================
             // CHẾ ĐỘ CẬP NHẬT (UPDATE)
@@ -192,11 +213,11 @@ public class AddTodoFragment extends Fragment {
             updateMap.put("date", date);
             updateMap.put("time", time.equals("Chọn giờ") ? "" : time);
             updateMap.put("priority", priority);
+            updateMap.put("icon", iconType); // Cập nhật lại Icon
 
             // Dùng updateChildren để chỉ cập nhật các trường bị đổi, không làm mất isCompleted
             mDatabase.child("Tasks").child(taskToEdit.getId()).updateChildren(updateMap)
                     .addOnSuccessListener(aVoid -> {
-                        // Cập nhật xong thì quay về trang trước
                         getParentFragmentManager().popBackStack();
                     })
                     .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
@@ -215,13 +236,13 @@ public class AddTodoFragment extends Fragment {
             taskMap.put("date", date);
             taskMap.put("time", time.equals("Chọn giờ") ? "" : time);
             taskMap.put("priority", priority);
+            taskMap.put("icon", iconType); // Lưu Icon mới
             taskMap.put("isCompleted", false);
             taskMap.put("timestamp", System.currentTimeMillis());
 
             if (taskId != null) {
                 mDatabase.child("Tasks").child(taskId).setValue(taskMap)
                         .addOnSuccessListener(aVoid -> {
-                            // Thêm xong thì quay về trang trước
                             getParentFragmentManager().popBackStack();
                         })
                         .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
