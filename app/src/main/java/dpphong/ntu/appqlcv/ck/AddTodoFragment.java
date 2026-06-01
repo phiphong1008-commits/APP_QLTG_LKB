@@ -1,5 +1,6 @@
-package dpphong.ntu.appqlcv.ck; // Thay bằng package name của bạn
+package dpphong.ntu.appqlcv.ck;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
@@ -12,7 +13,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 public class AddTodoFragment extends Fragment {
-
+    private Task taskToEdit = null;
     private EditText edtTitle, edtDesc;
     private TextView tvDate, tvTime, tvHeaderTitle;
     private RadioGroup rgPriority;
@@ -58,24 +58,68 @@ public class AddTodoFragment extends Fragment {
         tvTime = view.findViewById(R.id.tv_task_time);
         rgPriority = view.findViewById(R.id.rg_priority);
         btnSave = view.findViewById(R.id.btn_save_task);
-
-        tvHeaderTitle.setText("Công Việc");
+        ImageButton btnBack = view.findViewById(R.id.btnBack);
 
         tvDate.setOnClickListener(v -> showDatePicker());
         tvTime.setOnClickListener(v -> showTimePicker());
         btnSave.setOnClickListener(v -> saveTaskToFirebase());
-        ImageButton btnBack = view.findViewById(R.id.btnBack);
 
-        // Xử lý sự kiện click
+        // ==========================================
+        // KIỂM TRA CHẾ ĐỘ (THÊM MỚI HAY CHỈNH SỬA)
+        // ==========================================
+        if (getArguments() != null && getArguments().containsKey("TASK_EDIT")) {
+            taskToEdit = (Task) getArguments().getSerializable("TASK_EDIT");
+
+            if (taskToEdit != null) {
+                // ĐANG Ở CHẾ ĐỘ CHỈNH SỬA
+                tvHeaderTitle.setText("Sửa Công Việc");
+                btnSave.setText("Cập nhật");
+
+                // Đổ toàn bộ dữ liệu cũ lên giao diện
+                edtTitle.setText(taskToEdit.getTitle());
+                edtDesc.setText(taskToEdit.getDescription());
+                tvDate.setText(taskToEdit.getDate());
+
+                if (taskToEdit.getTime() != null && !taskToEdit.getTime().isEmpty()) {
+                    tvTime.setText(taskToEdit.getTime());
+                } else {
+                    tvTime.setText("Chọn giờ");
+                }
+
+                if (taskToEdit.getPriority() != null) {
+                    switch (taskToEdit.getPriority()) {
+                        case "Cao": rgPriority.check(R.id.rb_high); break;
+                        case "Thấp": rgPriority.check(R.id.rb_low); break;
+                        default: rgPriority.check(R.id.rb_medium); break;
+                    }
+                }
+            }
+        } else {
+            // ĐANG Ở CHẾ ĐỘ THÊM MỚI
+            tvHeaderTitle.setText("Tạo Công Việc");
+            btnSave.setText("Lưu công việc");
+        }
+
+        // Xử lý sự kiện click nút Back
         btnBack.setOnClickListener(v -> {
-            // Kiểm tra xem trong BackStack có Fragment nào trước đó không
             if (getParentFragmentManager().getBackStackEntryCount() > 0) {
-                getParentFragmentManager().popBackStack(); // Bật Fragment hiện tại ra, quay về Fragment cũ
+                getParentFragmentManager().popBackStack();
             } else {
-                requireActivity().onBackPressed(); // Backup: hành vi giống nút back vật lý của điện thoại
+                requireActivity().onBackPressed();
             }
         });
+
         return view;
+    }
+
+    // Hàm tạo hộp thoại thông báo (Thay thế cho Toast)
+    private void showAlertDialog(String title, String message) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(title)
+                .setMessage(message)
+                .setIcon(android.R.drawable.ic_dialog_info)
+                .setPositiveButton("Đồng ý", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void showDatePicker() {
@@ -85,7 +129,6 @@ public class AddTodoFragment extends Fragment {
                     myCalendar.set(Calendar.YEAR, year);
                     myCalendar.set(Calendar.MONTH, month);
                     myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    // Lưu ý: Định dạng yyyy-MM-dd để sau này dễ so sánh với Lịch
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
                     tvDate.setText(sdf.format(myCalendar.getTime()));
                 },
@@ -115,7 +158,7 @@ public class AddTodoFragment extends Fragment {
     private void saveTaskToFirebase() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            Toast.makeText(getContext(), "Vui lòng đăng nhập trước!", Toast.LENGTH_SHORT).show();
+            showAlertDialog("Lỗi", "Vui lòng đăng nhập trước!");
             return;
         }
 
@@ -124,12 +167,13 @@ public class AddTodoFragment extends Fragment {
         String date = tvDate.getText().toString();
         String time = tvTime.getText().toString();
 
+        // Validate bằng AlertDialog
         if (TextUtils.isEmpty(title)) {
-            Toast.makeText(getContext(), "Vui lòng nhập tên công việc", Toast.LENGTH_SHORT).show();
+            showAlertDialog("Cảnh báo", "Vui lòng nhập tên công việc!");
             return;
         }
         if (date.equals("Chọn ngày")) {
-            Toast.makeText(getContext(), "Vui lòng chọn ngày thực hiện", Toast.LENGTH_SHORT).show();
+            showAlertDialog("Cảnh báo", "Vui lòng chọn ngày thực hiện!");
             return;
         }
 
@@ -138,37 +182,50 @@ public class AddTodoFragment extends Fragment {
         if (checkedId == R.id.rb_high) priority = "Cao";
         else if (checkedId == R.id.rb_low) priority = "Thấp";
 
-        // 1. Tạo một ID ngẫu nhiên cho Task này
-        String taskId = mDatabase.child("Tasks").push().getKey();
+        if (taskToEdit != null) {
+            // ==========================================
+            // CHẾ ĐỘ CẬP NHẬT (UPDATE)
+            // ==========================================
+            HashMap<String, Object> updateMap = new HashMap<>();
+            updateMap.put("title", title);
+            updateMap.put("description", desc);
+            updateMap.put("date", date);
+            updateMap.put("time", time.equals("Chọn giờ") ? "" : time);
+            updateMap.put("priority", priority);
 
-        // 2. Gom dữ liệu vào HashMap (Hoặc bạn có thể dùng Object TaskModel đã tạo trước đó)
-        HashMap<String, Object> taskMap = new HashMap<>();
-        taskMap.put("id", taskId);
-        taskMap.put("userId", currentUser.getUid());
-        taskMap.put("title", title);
-        taskMap.put("description", desc);
-        taskMap.put("date", date);
-        taskMap.put("time", time.equals("Chọn giờ") ? "" : time);
-        taskMap.put("priority", priority);
-        taskMap.put("isCompleted", false);
-        taskMap.put("timestamp", System.currentTimeMillis());
+            // Dùng updateChildren để chỉ cập nhật các trường bị đổi, không làm mất isCompleted
+            mDatabase.child("Tasks").child(taskToEdit.getId()).updateChildren(updateMap)
+                    .addOnSuccessListener(aVoid -> {
+                        // Cập nhật xong thì quay về trang trước
+                        getParentFragmentManager().popBackStack();
+                    })
+                    .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
 
-        // 3. Đẩy lên Firebase
-        if (taskId != null) {
-            mDatabase.child("Tasks").child(taskId).setValue(taskMap)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Đã lưu công việc thành công!", Toast.LENGTH_SHORT).show();
-                            // Reset lại form nhập liệu
-                            edtTitle.setText("");
-                            edtDesc.setText("");
-                            tvDate.setText("Chọn ngày");
-                            tvTime.setText("Chọn giờ");
-                            rgPriority.check(R.id.rb_medium);
-                        } else {
-                            Toast.makeText(getContext(), "Lỗi: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        } else {
+            // ==========================================
+            // CHẾ ĐỘ THÊM MỚI (INSERT)
+            // ==========================================
+            String taskId = mDatabase.child("Tasks").push().getKey();
+
+            HashMap<String, Object> taskMap = new HashMap<>();
+            taskMap.put("id", taskId);
+            taskMap.put("userId", currentUser.getUid());
+            taskMap.put("title", title);
+            taskMap.put("description", desc);
+            taskMap.put("date", date);
+            taskMap.put("time", time.equals("Chọn giờ") ? "" : time);
+            taskMap.put("priority", priority);
+            taskMap.put("isCompleted", false);
+            taskMap.put("timestamp", System.currentTimeMillis());
+
+            if (taskId != null) {
+                mDatabase.child("Tasks").child(taskId).setValue(taskMap)
+                        .addOnSuccessListener(aVoid -> {
+                            // Thêm xong thì quay về trang trước
+                            getParentFragmentManager().popBackStack();
+                        })
+                        .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
+            }
         }
     }
 }

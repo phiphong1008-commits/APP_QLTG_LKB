@@ -1,4 +1,4 @@
-package dpphong.ntu.appqlcv.ck; // Lưu ý giữ nguyên tên package của bạn nếu nó khác
+package dpphong.ntu.appqlcv.ck;
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -57,27 +56,37 @@ public class LoginFragment extends Fragment {
         String email = edtEmail.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
 
-        // Kiểm tra người dùng nhập đủ thông tin chưa
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(getContext(), "Vui lòng nhập đầy đủ Email và Mật khẩu!", Toast.LENGTH_SHORT).show();
-            return;
+        boolean isValid = true;
+
+        // Báo lỗi trực tiếp trên ô Email nếu để trống
+        if (TextUtils.isEmpty(email)) {
+            edtEmail.setError("Vui lòng nhập Email!");
+            edtEmail.requestFocus(); // Tự động đưa con trỏ chuột về ô này
+            isValid = false;
         }
+
+        // Báo lỗi trực tiếp trên ô Mật khẩu nếu để trống
+        if (TextUtils.isEmpty(password)) {
+            edtPassword.setError("Vui lòng nhập Mật khẩu!");
+            if (isValid) edtPassword.requestFocus();
+            isValid = false;
+        }
+
+        // Nếu có lỗi nhập liệu thì dừng lại, không gọi Firebase
+        if (!isValid) return;
 
         // Gọi Firebase để đăng nhập
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Đăng nhập thành công
-                        Toast.makeText(getContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-
-                        // Chuyển sang trang Profile bằng Fragment Transaction
+                        // Thành công: Chuyển thẳng sang trang Profile không cần thông báo
                         getParentFragmentManager().beginTransaction()
                                 .replace(R.id.calendar_container, new ProfileFragment())
                                 .commit();
-
                     } else {
-                        // Đăng nhập thất bại
-                        Toast.makeText(getContext(), "Đăng nhập thất bại: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Thất bại: Báo lỗi sai tài khoản ngay trên ô mật khẩu
+                        edtPassword.setError("Email hoặc mật khẩu không chính xác!");
+                        edtPassword.requestFocus();
                     }
                 });
     }

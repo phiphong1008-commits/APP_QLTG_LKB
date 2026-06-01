@@ -1,6 +1,8 @@
 package dpphong.ntu.appqlcv.ck;
 
-public class Diary {
+import java.io.Serializable;
+
+public class Diary implements Serializable {
     private String id;
     private String title;
     private String content;

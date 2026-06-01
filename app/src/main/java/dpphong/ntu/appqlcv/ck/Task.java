@@ -2,7 +2,9 @@ package dpphong.ntu.appqlcv.ck;
 
 import com.google.firebase.database.PropertyName;
 
-public class Task {
+import java.io.Serializable;
+
+public class Task implements Serializable {
     private String id;
     private String title;
     private String description;

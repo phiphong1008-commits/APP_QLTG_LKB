@@ -2,6 +2,7 @@ package dpphong.ntu.appqlcv.ck;
 
 import android.graphics.Color;
 import android.graphics.Paint; // Thêm thư viện Paint cho hiệu ứng gạch chữ
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,8 @@ import android.widget.TextView;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -67,7 +70,45 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         } else {
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
         }
+        //
+        holder.cardContainer.setOnLongClickListener(v -> {
+            // Sử dụng AlertDialog thay cho Toast như bạn mong muốn
+            new AlertDialog.Builder(v.getContext())
+                    .setTitle("Xóa công việc")
+                    .setMessage("Bạn có chắc chắn muốn xóa công việc '" + task.getTitle() + "' không?")
+                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .setPositiveButton("Xóa", (dialog, which) -> {
+                        if (task.getId() != null) {
+                            // Xóa trên Firebase
+                            com.google.firebase.database.FirebaseDatabase.getInstance()
+                                    .getReference("Tasks")
+                                    .child(task.getId())
+                                    .removeValue();
+                            // Lưu ý: Không cần xóa trong list cục bộ vì ValueEventListener bên TodoFragment
+                            // sẽ tự động nhận biết thay đổi và tải lại danh sách.
+                        }
+                    })
+                    .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                    .show();
+            return true; // Trả về true để hệ thống biết sự kiện nhấn giữ đã được xử lý
+        });
 
+
+// 2. XỬ LÝ CHỈNH SỬA (NHẤN CHẠM)
+        holder.cardContainer.setOnClickListener(v -> {
+            // Tạo Fragment và Bundle
+            AddTodoFragment editFragment = new AddTodoFragment();
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("TASK_EDIT", task); // Đóng gói object Task
+            editFragment.setArguments(bundle);
+
+            // Chuyển màn hình từ Adapter
+            AppCompatActivity activity = (AppCompatActivity) v.getContext();
+            activity.getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.calendar_container, editFragment)
+                    .addToBackStack(null) // Để người dùng có thể bấm Back quay lại
+                    .commit();
+        });
         // 4. Lắng nghe sự kiện khi người dùng tự tay bấm vào CheckBox
         holder.cbStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
 

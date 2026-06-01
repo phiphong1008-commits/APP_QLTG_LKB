@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,7 +44,8 @@ public class RegisterFragment extends Fragment {
         // Xử lý chuyển về màn hình Đăng nhập
         tvGoToLogin.setOnClickListener(v -> {
             FragmentManager fm = getParentFragmentManager();
-            fm.beginTransaction().replace(R.id.calendar_container,new LoginFragment())
+            fm.beginTransaction()
+                    .replace(R.id.calendar_container, new LoginFragment())
                     .addToBackStack(null)
                     .commit();
         });
@@ -58,30 +58,53 @@ public class RegisterFragment extends Fragment {
         String password = edtPassword.getText().toString().trim();
         String confirmPassword = edtConfirmPassword.getText().toString().trim();
 
-        // Validate dữ liệu
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password) || TextUtils.isEmpty(confirmPassword)) {
-            Toast.makeText(getContext(), "Vui lòng nhập đủ các trường!", Toast.LENGTH_SHORT).show();
-            return;
+        boolean isValid = true;
+
+        // 1. Kiểm tra Email
+        if (TextUtils.isEmpty(email)) {
+            edtEmail.setError("Vui lòng nhập Email!");
+            edtEmail.requestFocus();
+            isValid = false;
         }
 
-        if (password.length() < 6) {
-            Toast.makeText(getContext(), "Mật khẩu phải từ 6 ký tự trở lên!", Toast.LENGTH_SHORT).show();
-            return;
+        // 2. Kiểm tra Mật khẩu
+        if (TextUtils.isEmpty(password)) {
+            edtPassword.setError("Vui lòng nhập Mật khẩu!");
+            if (isValid) edtPassword.requestFocus();
+            isValid = false;
+        } else if (password.length() < 6) {
+            edtPassword.setError("Mật khẩu phải từ 6 ký tự trở lên!");
+            if (isValid) edtPassword.requestFocus();
+            isValid = false;
         }
 
-        if (!password.equals(confirmPassword)) {
-            Toast.makeText(getContext(), "Mật khẩu nhập lại không khớp!", Toast.LENGTH_SHORT).show();
-            return;
+        // 3. Kiểm tra Xác nhận mật khẩu
+        if (TextUtils.isEmpty(confirmPassword)) {
+            edtConfirmPassword.setError("Vui lòng xác nhận Mật khẩu!");
+            if (isValid) edtConfirmPassword.requestFocus();
+            isValid = false;
+        } else if (!password.equals(confirmPassword)) {
+            edtConfirmPassword.setError("Mật khẩu nhập lại không khớp!");
+            if (isValid) edtConfirmPassword.requestFocus();
+            isValid = false;
         }
+
+        // Nếu có bất kỳ lỗi nhập liệu nào thì dừng lại
+        if (!isValid) return;
 
         // Gọi Firebase để tạo tài khoản
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Toast.makeText(getContext(), "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-                        // Chuyển hướng người dùng quay lại Login hoặc vào thẳng Calendar
+                        // Đăng ký thành công, Firebase tự động đăng nhập.
+                        // Chuyển thẳng sang trang Profile (hoặc Todo) mà không cần Toast
+                        getParentFragmentManager().beginTransaction()
+                                .replace(R.id.calendar_container, new ProfileFragment())
+                                .commit();
                     } else {
-                        Toast.makeText(getContext(), "Lỗi: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Lỗi từ phía máy chủ (Ví dụ: Email đã được sử dụng, sai định dạng email...)
+                        edtEmail.setError("Đăng ký thất bại: " + task.getException().getMessage());
+                        edtEmail.requestFocus();
                     }
                 });
     }
