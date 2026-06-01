@@ -1,11 +1,14 @@
 package dpphong.ntu.appqlcv.ck;
 
 import android.graphics.Color;
+import android.graphics.Paint; // Thêm thư viện Paint cho hiệu ứng gạch chữ
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox; // Thêm thư viện CheckBox
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -45,47 +48,70 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         String descStr = task.getDescription() != null ? task.getDescription() : "";
         holder.tvDesc.setText(timeStr + " - " + descStr);
 
-        // Đổi Icon theo trạng thái hoàn thành (isCompleted) ban đầu khi tải dữ liệu
+        // Giữ nguyên Icon mặc định cho đẹp (không đổi thành icon checkbox nữa)
+        holder.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
+
+        // ========================================================
+        // --- XỬ LÝ CHECKBOX VÀ TRẠNG THÁI (XONG/CHƯA XONG) ---
+        // ========================================================
+
+        // 1. Tắt Listener tạm thời để không bị lỗi gọi nhầm khi cuộn danh sách (Recycle)
+        holder.cbStatus.setOnCheckedChangeListener(null);
+
+        // 2. Cài đặt trạng thái CheckBox theo dữ liệu tải về
+        holder.cbStatus.setChecked(task.isCompleted());
+
+        // 3. Cài đặt hiệu ứng gạch ngang chữ ban đầu
         if (task.isCompleted()) {
-            holder.ivIcon.setImageResource(android.R.drawable.checkbox_on_background);
+            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         } else {
-            holder.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda); // Icon mặc định
+            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
         }
 
-        // --- ĐOẠN MỚI THÊM: BẮT SỰ KIỆN CLICK VÀO ICON ---
-        holder.ivIcon.setOnClickListener(v -> {
-            // 1. Đảo ngược trạng thái hiện tại (Đang true thì thành false, đang false thì thành true)
-            boolean newStatus = !task.isCompleted();
-            task.setCompleted(newStatus);
+        // 4. Lắng nghe sự kiện khi người dùng tự tay bấm vào CheckBox
+        holder.cbStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
 
-            // 2. Cập nhật lại giao diện của đúng dòng (item) này ngay lập tức cho mượt
-            notifyItemChanged(position);
+            // Cập nhật hiệu ứng gạch chữ ngay lập tức cho mượt
+            if (isChecked) {
+                holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else {
+                holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            }
 
-            // 3. Đẩy trạng thái mới lên Firebase để lưu giữ
+            // Lưu trạng thái vào model cục bộ
+            task.setCompleted(isChecked);
+
+            // Đẩy trạng thái mới lên Firebase
             if (task.getId() != null) {
                 com.google.firebase.database.FirebaseDatabase.getInstance()
                         .getReference("Tasks")
-                        .child(task.getId())          // Trỏ vào đúng ID của công việc đó
-                        .child("isCompleted")         // Chỉ cập nhật đúng trường isCompleted
-                        .setValue(newStatus);
+                        .child(task.getId())
+                        .child("isCompleted")
+                        .setValue(isChecked)
+                        .addOnFailureListener(e -> {
+                            // Nếu mạng lỗi hoặc lưu thất bại, hoàn tác lại UI
+                            holder.cbStatus.setChecked(!isChecked);
+                            task.setCompleted(!isChecked);
+                            Log.e("TaskAdapter", "Lỗi update Firebase: " + e.getMessage());
+                        });
             }
         });
-        // ------------------------------------------------
+        // ========================================================
 
         // Đổi màu background theo mức độ ưu tiên
         if (task.getPriority() != null) {
             switch (task.getPriority()) {
                 case "Cao":
-                    holder.cardContainer.setCardBackgroundColor(android.graphics.Color.parseColor("#FFCDD2")); // Đỏ nhạt
+                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFCDD2")); // Đỏ nhạt
                     break;
                 case "Vừa":
-                    holder.cardContainer.setCardBackgroundColor(android.graphics.Color.parseColor("#FFF9C4")); // Vàng nhạt
+                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFF9C4")); // Vàng nhạt
                     break;
                 case "Thấp":
-                    holder.cardContainer.setCardBackgroundColor(android.graphics.Color.parseColor("#C8E6C9")); // Xanh lá nhạt
+                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#C8E6C9")); // Xanh lá nhạt
                     break;
                 default:
-                    holder.cardContainer.setCardBackgroundColor(android.graphics.Color.WHITE);
+                    holder.cardContainer.setCardBackgroundColor(Color.WHITE);
                     break;
             }
         }
@@ -100,6 +126,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         CardView cardContainer;
         ImageView ivIcon;
         TextView tvTitle, tvDesc;
+        CheckBox cbStatus; // Khai báo CheckBox
 
         public TaskViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -107,6 +134,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             ivIcon = itemView.findViewById(R.id.iv_task_icon);
             tvTitle = itemView.findViewById(R.id.tv_task_title);
             tvDesc = itemView.findViewById(R.id.tv_task_desc);
+            cbStatus = itemView.findViewById(R.id.cb_task_status); // Ánh xạ CheckBox từ XML
         }
     }
 }

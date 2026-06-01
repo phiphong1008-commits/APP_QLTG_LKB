@@ -1,5 +1,7 @@
 package dpphong.ntu.appqlcv.ck;
 
+import com.google.firebase.database.PropertyName;
+
 public class Task {
     private String id;
     private String title;
@@ -47,12 +49,20 @@ public class Task {
     public String getPriority() { return priority; }
     public void setPriority(String priority) { this.priority = priority; }
 
-    public boolean isCompleted() { return isCompleted; }
-    public void setCompleted(boolean completed) { isCompleted = completed; }
+
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+    @PropertyName("isCompleted")
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    @PropertyName("isCompleted")
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
 }

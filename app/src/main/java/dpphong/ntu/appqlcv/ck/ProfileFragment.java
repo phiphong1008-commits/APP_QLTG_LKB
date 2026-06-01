@@ -113,28 +113,29 @@ public class ProfileFragment extends Fragment {
 
         query.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) { // Biến gốc là "snapshot"
                 int total = 0;
-                int completed = 0;
-                int pending = 0;
+                int taskCompletedCount = 0;
+                int taskUncompletedCount = 0;
 
+                // Đã sửa: Dùng taskSnapshot để duyệt qua snapshot.getChildren()
                 for (DataSnapshot taskSnapshot : snapshot.getChildren()) {
                     Task task = taskSnapshot.getValue(Task.class);
                     if (task != null) {
-                        total++;
-                        // Dựa vào trường isCompleted trên Firebase để phân loại
+                        total++; // Tăng tổng số công việc lên 1
+
                         if (task.isCompleted()) {
-                            completed++;
+                            taskCompletedCount++; // Đưa vào nhóm Đã hoàn thành
                         } else {
-                            pending++;
+                            taskUncompletedCount++; // Đưa vào nhóm Chưa hoàn thành
                         }
                     }
                 }
 
-                // Cập nhật lên giao diện
+                // Cập nhật số liệu chuẩn xác lên giao diện
                 tvStatTotal.setText(String.valueOf(total));
-                tvStatCompleted.setText(String.valueOf(completed));
-                tvStatPending.setText(String.valueOf(pending));
+                tvStatCompleted.setText(String.valueOf(taskCompletedCount));
+                tvStatPending.setText(String.valueOf(taskUncompletedCount));
             }
 
             @Override
