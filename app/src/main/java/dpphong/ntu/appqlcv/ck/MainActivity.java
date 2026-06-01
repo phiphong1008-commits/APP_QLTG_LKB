@@ -10,6 +10,8 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -40,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 Fragment select_frag = null;
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
                 int itemid = menuItem.getItemId();
 
                 // Khớp đúng ID: calendar, account, diary từ file menu của bạn
@@ -54,7 +57,18 @@ public class MainActivity extends AppCompatActivity {
                      select_frag = new DiaryFragment(); // Màn hình Nhật ký/Công việc (bạn tạo sau)
                 }
                 else if (itemid == R.id.account) {
-                     select_frag = new LoginFragment(); // Màn hình Tài khoản (bạn tạo sau)
+                    if (currentUser != null) {
+                        // TRƯỜNG HỢP 1: Đã đăng nhập -> Mở thẳng trang ProfileFragment
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.calendar_container, new ProfileFragment()) // Thay id container cho đúng với code của bạn
+                                .commit();
+                    } else {
+                        // TRƯỜNG HỢP 2: Chưa đăng nhập -> Mở trang LoginFragment
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.calendar_container, new LoginFragment())
+                                .commit();
+                    }
+                     // Màn hình Tài khoản (bạn tạo sau)
                 }
 
                 // 4. Nạp Fragment được chọn vào đúng hộp chứa calendar_container trong activity_main.xml

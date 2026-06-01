@@ -1,16 +1,27 @@
 package dpphong.ntu.appqlcv.ck;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CalendarView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -20,7 +31,10 @@ public class CalendarFragment extends Fragment {
     private CalendarView calendarView;
     private RecyclerView rvTasks;
     private TaskAdapter taskAdapter;
-    private List<Task> allTasks; // Giả lập database chứa toàn bộ task
+    private List<Task> allTasks;
+
+    // Thêm biến này để lưu ngày người dùng đang chọn trên lịch
+    private String currentSelectedDate;
 
     @Nullable
     @Override
@@ -29,35 +43,38 @@ public class CalendarFragment extends Fragment {
 
         TextView tvHeaderTitle = view.findViewById(R.id.tv_header_title);
         if(tvHeaderTitle != null) {
-            tvHeaderTitle.setText("Lịch & Công Việc");
+            tvHeaderTitle.setText("Lịch");
         }
 
         calendarView = view.findViewById(R.id.calendarView);
         rvTasks = view.findViewById(R.id.rv_tasks);
 
-        // Khởi tạo danh sách dummy data (Sau này lấy từ Firebase)
-        initDummyData();
+        // 1. Khởi tạo danh sách rỗng để tránh NullPointerException
+        allTasks = new ArrayList<>();
 
-        // Cài đặt RecyclerView
+        // 2. Cài đặt RecyclerView
         rvTasks.setLayoutManager(new LinearLayoutManager(getContext()));
         taskAdapter = new TaskAdapter(new ArrayList<>());
         rvTasks.setAdapter(taskAdapter);
 
-        // Lấy ngày hiện tại để hiển thị task của ngày hôm nay lúc mới mở lên
+        // 3. Lấy ngày hiện tại hệ thống để gán cho currentSelectedDate lúc mới mở lên
         Calendar calendar = Calendar.getInstance();
-        String today = String.format("%04d-%02d-%02d",
+        currentSelectedDate = String.format("%04d-%02d-%02d",
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH) + 1,
                 calendar.get(Calendar.DAY_OF_MONTH));
-        filterTasksByDate(today);
 
-        // Bắt sự kiện khi người dùng click vào một ngày trên lịch
+        // 4. Bắt đầu tải dữ liệu thực tế từ Firebase
+        loadTasksFromFirebase();
+
+        // 5. Bắt sự kiện khi người dùng click vào một ngày bất kỳ trên lịch
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
             public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
-                // Lưu ý: month trả về từ 0-11 nên cần cộng thêm 1
-                String selectedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
-                filterTasksByDate(selectedDate);
+                // Cập nhật lại ngày đang chọn
+                currentSelectedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
+                // Tiến hành lọc dữ liệu
+                filterTasksByDate(currentSelectedDate);
             }
         });
 
@@ -68,7 +85,8 @@ public class CalendarFragment extends Fragment {
     private void filterTasksByDate(String date) {
         List<Task> filteredList = new ArrayList<>();
         for (Task task : allTasks) {
-            if (task.getDate().equals(date)) {
+            // Cần check task.getDate() != null để tránh crash app nếu trên db có task bị lỗi thiếu ngày
+            if (task.getDate() != null && task.getDate().equals(date)) {
                 filteredList.add(task);
             }
         }
@@ -76,16 +94,38 @@ public class CalendarFragment extends Fragment {
         taskAdapter.updateList(filteredList);
     }
 
-    // Giả lập dữ liệu nhận về từ Database
-    private void initDummyData() {
-        allTasks = new ArrayList<>();
+    // Hàm tải dữ liệu Realtime từ Firebase
+    private void loadTasksFromFirebase() {
+        // Lấy ID của user đang đăng nhập
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // Bạn cần thay R.drawable.ic_... bằng các icon bạn đã chuẩn bị nhé
-        // Dữ liệu mẫu cho ngày 2026-05-18
-        allTasks.add(new Task("Học Lập trình Di động", "Hoàn thiện Fragment Lịch và Adapter", "2026-05-18", "Cao", android.R.drawable.ic_menu_edit));
-        allTasks.add(new Task("Mua đồ siêu thị", "Mua sữa, rau, thịt bò", "2026-05-18", "Thấp", android.R.drawable.ic_menu_compass));
+        // Truy vấn: Tìm trong node "Tasks", lấy ra các dữ liệu có trường "userId" khớp với user hiện tại
+        Query query = FirebaseDatabase.getInstance().getReference("Tasks")
+                .orderByChild("userId").equalTo(currentUserId);
 
-        // Dữ liệu mẫu cho ngày 2026-05-19
-        allTasks.add(new Task("Họp nhóm đồ án", "Báo cáo tiến độ đồ án cuối kỳ", "2026-05-19", "Vừa", android.R.drawable.ic_menu_agenda));
+        // Lắng nghe dữ liệu, khi có thêm/sửa/xóa trên Firebase thì nó tự cập nhật lại
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                allTasks.clear(); // Xóa list cũ trước khi add list mới vào
+                for (DataSnapshot taskSnapshot : snapshot.getChildren()) {
+                    Task task = taskSnapshot.getValue(Task.class);
+                    if (task != null) {
+                        allTasks.add(task);
+                    }
+                }
+                // Sau khi lấy toàn bộ data về, chạy hàm lọc theo ngày đang chọn trên lịch để hiển thị
+                filterTasksByDate(currentSelectedDate);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("Firebase", "Lỗi tải dữ liệu: " + error.getMessage());
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Không thể tải dữ liệu", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 }

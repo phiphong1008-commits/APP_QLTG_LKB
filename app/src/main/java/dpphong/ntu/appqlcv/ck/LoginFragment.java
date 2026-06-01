@@ -1,4 +1,4 @@
-package dpphong.ntu.appqlcv.ck; // Thay bằng package name thực tế của bạn
+package dpphong.ntu.appqlcv.ck; // Lưu ý giữ nguyên tên package của bạn nếu nó khác
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -43,9 +43,7 @@ public class LoginFragment extends Fragment {
 
         // Xử lý chuyển sang màn hình Đăng ký
         tvGoToRegister.setOnClickListener(v -> {
-            // Viết code chuyển sang RegisterFragment của bạn ở đây
             FragmentManager fm = getParentFragmentManager();
-
             fm.beginTransaction()
                     .replace(R.id.calendar_container, new RegisterFragment())
                     .addToBackStack(null)
@@ -69,10 +67,17 @@ public class LoginFragment extends Fragment {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
+                        // Đăng nhập thành công
                         Toast.makeText(getContext(), "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-                        // Chuyển hướng người dùng vào màn hình CalendarFragment ở đây
+
+                        // Chuyển sang trang Profile bằng Fragment Transaction
+                        getParentFragmentManager().beginTransaction()
+                                .replace(R.id.calendar_container, new ProfileFragment())
+                                .commit();
+
                     } else {
-                        Toast.makeText(getContext(), "Lỗi: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        // Đăng nhập thất bại
+                        Toast.makeText(getContext(), "Đăng nhập thất bại: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }

@@ -30,6 +30,19 @@
             android:orientation="vertical"
             android:padding="20dp">
 
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:src="@drawable/ic_back"
+                app:tint="@android:color/white"
+                app:backgroundTint="#89D6E0"
+                app:fabSize="normal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:contentDescription="Quay lại màn hình trước" />
+
             <TextView
                 android:id="@+id/tv_diary_date"
                 android:layout_width="match_parent"

@@ -1,163 +1,107 @@
-package dpphong.ntu.appqlcv.ck; // Thay bằng package name của bạn
+package dpphong.ntu.appqlcv.ck;
 
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 
 public class TodoFragment extends Fragment {
 
-    private EditText edtTitle, edtDesc;
-    private TextView tvDate, tvTime, tvHeaderTitle;
-    private RadioGroup rgPriority;
-    private Button btnSave;
-
-    private final Calendar myCalendar = Calendar.getInstance();
-
-    // Khai báo Firebase
-    private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
+    private RecyclerView rvTodoToday;
+    private TextView tvHeaderTitle;
+    private FloatingActionButton fabAddTodo;
+    private TaskAdapter taskAdapter;
+    private List<Task> todayTasks;
+    private String todayString;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_todo, container, false);
 
-        // Khởi tạo Firebase
-        mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
-        // Ánh xạ View
+        rvTodoToday = view.findViewById(R.id.rv_todo_today);
+        fabAddTodo = view.findViewById(R.id.fab_add_todo);
         tvHeaderTitle = view.findViewById(R.id.tv_header_title);
-        edtTitle = view.findViewById(R.id.edt_task_title);
-        edtDesc = view.findViewById(R.id.edt_task_desc);
-        tvDate = view.findViewById(R.id.tv_task_date);
-        tvTime = view.findViewById(R.id.tv_task_time);
-        rgPriority = view.findViewById(R.id.rg_priority);
-        btnSave = view.findViewById(R.id.btn_save_task);
+        tvHeaderTitle.setText("Danh sách công việc");
+        // Khởi tạo RecyclerView
+        todayTasks = new ArrayList<>();
+        taskAdapter = new TaskAdapter(todayTasks);
+        rvTodoToday.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvTodoToday.setAdapter(taskAdapter);
 
-        tvHeaderTitle.setText("Công Việc");
+        // Lấy chuỗi ngày hôm nay (VD: "2026-05-31")
+        Calendar calendar = Calendar.getInstance();
+        todayString = String.format("%04d-%02d-%02d",
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.DAY_OF_MONTH));
 
-        tvDate.setOnClickListener(v -> showDatePicker());
-        tvTime.setOnClickListener(v -> showTimePicker());
-        btnSave.setOnClickListener(v -> saveTaskToFirebase());
+        // Tải dữ liệu công việc hôm nay
+        loadTodayTasks();
+
+        // Xử lý sự kiện khi ấn nút (+)
+        fabAddTodo.setOnClickListener(v -> {
+            // Chuyển sang màn hình thêm công việc (AddTodoFragment)
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.calendar_container, new AddTodoFragment()) // Tên class nhập liệu của bạn
+                    .addToBackStack(null) // Lệnh này giúp ấn nút Back trên điện thoại sẽ quay lại danh sách
+                    .commit();
+        });
 
         return view;
     }
 
-    private void showDatePicker() {
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                requireContext(),
-                (view, year, month, dayOfMonth) -> {
-                    myCalendar.set(Calendar.YEAR, year);
-                    myCalendar.set(Calendar.MONTH, month);
-                    myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    // Lưu ý: Định dạng yyyy-MM-dd để sau này dễ so sánh với Lịch
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                    tvDate.setText(sdf.format(myCalendar.getTime()));
-                },
-                myCalendar.get(Calendar.YEAR),
-                myCalendar.get(Calendar.MONTH),
-                myCalendar.get(Calendar.DAY_OF_MONTH)
-        );
-        datePickerDialog.show();
-    }
+    private void loadTodayTasks() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
 
-    private void showTimePicker() {
-        TimePickerDialog timePickerDialog = new TimePickerDialog(
-                requireContext(),
-                (view, hourOfDay, minute) -> {
-                    myCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    myCalendar.set(Calendar.MINUTE, minute);
-                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                    tvTime.setText(sdf.format(myCalendar.getTime()));
-                },
-                myCalendar.get(Calendar.HOUR_OF_DAY),
-                myCalendar.get(Calendar.MINUTE),
-                true
-        );
-        timePickerDialog.show();
-    }
+        String currentUserId = currentUser.getUid();
 
-    private void saveTaskToFirebase() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(getContext(), "Vui lòng đăng nhập trước!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Truy vấn lấy task của user hiện tại
+        Query query = FirebaseDatabase.getInstance().getReference("Tasks")
+                .orderByChild("userId").equalTo(currentUserId);
 
-        String title = edtTitle.getText().toString().trim();
-        String desc = edtDesc.getText().toString().trim();
-        String date = tvDate.getText().toString();
-        String time = tvTime.getText().toString();
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                todayTasks.clear();
+                for (DataSnapshot taskSnapshot : snapshot.getChildren()) {
+                    Task task = taskSnapshot.getValue(Task.class);
+                    // Chỉ lấy những task có ngày trùng với hôm nay
+                    if (task != null && task.getDate() != null && task.getDate().equals(todayString)) {
+                        todayTasks.add(task);
+                    }
+                }
+                // Cập nhật lên màn hình
+                taskAdapter.notifyDataSetChanged();
+            }
 
-        if (TextUtils.isEmpty(title)) {
-            Toast.makeText(getContext(), "Vui lòng nhập tên công việc", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (date.equals("Chọn ngày")) {
-            Toast.makeText(getContext(), "Vui lòng chọn ngày thực hiện", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String priority = "Vừa";
-        int checkedId = rgPriority.getCheckedRadioButtonId();
-        if (checkedId == R.id.rb_high) priority = "Cao";
-        else if (checkedId == R.id.rb_low) priority = "Thấp";
-
-        // 1. Tạo một ID ngẫu nhiên cho Task này
-        String taskId = mDatabase.child("Tasks").push().getKey();
-
-        // 2. Gom dữ liệu vào HashMap (Hoặc bạn có thể dùng Object TaskModel đã tạo trước đó)
-        HashMap<String, Object> taskMap = new HashMap<>();
-        taskMap.put("id", taskId);
-        taskMap.put("userId", currentUser.getUid());
-        taskMap.put("title", title);
-        taskMap.put("description", desc);
-        taskMap.put("date", date);
-        taskMap.put("time", time.equals("Chọn giờ") ? "" : time);
-        taskMap.put("priority", priority);
-        taskMap.put("isCompleted", false);
-        taskMap.put("timestamp", System.currentTimeMillis());
-
-        // 3. Đẩy lên Firebase
-        if (taskId != null) {
-            mDatabase.child("Tasks").child(taskId).setValue(taskMap)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Đã lưu công việc thành công!", Toast.LENGTH_SHORT).show();
-                            // Reset lại form nhập liệu
-                            edtTitle.setText("");
-                            edtDesc.setText("");
-                            tvDate.setText("Chọn ngày");
-                            tvTime.setText("Chọn giờ");
-                            rgPriority.check(R.id.rb_medium);
-                        } else {
-                            Toast.makeText(getContext(), "Lỗi: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("Firebase", "Lỗi tải todo: " + error.getMessage());
+            }
+        });
     }
 }

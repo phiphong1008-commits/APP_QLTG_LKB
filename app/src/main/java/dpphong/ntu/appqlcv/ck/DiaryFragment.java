@@ -1,116 +1,91 @@
-package dpphong.ntu.appqlcv.ck; // Thay bằng package name của bạn
+package dpphong.ntu.appqlcv.ck;
 
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DiaryFragment extends Fragment {
-
-    private TextView tvHeaderTitle, tvDate;
-    private EditText edtTitle, edtContent;
-    private Button btnSave;
-
-    private String databaseDateString;
-
-    // Khai báo Firebase
-    private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
+    private TextView tvHeaderTitle;
+    private RecyclerView rvDiary;
+    private FloatingActionButton fabAddDiary;
+    private DiaryAdapter diaryAdapter;
+    private List<Diary> diaryList;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_diary, container, false);
+        // Dùng chung layout cấu trúc với Todo hoặc tự tạo fragment_diary.xml có id tương ứng
+        View view = inflater.inflate(R.layout.fragment_todo, container, false); // Tạm dùng layout có sẵn rv_todo_today và fab_add_todo
 
-        // Khởi tạo Firebase
-        mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
-        // Ánh xạ View
+        rvDiary = view.findViewById(R.id.rv_todo_today);
+        fabAddDiary = view.findViewById(R.id.fab_add_todo);
         tvHeaderTitle = view.findViewById(R.id.tv_header_title);
-        tvDate = view.findViewById(R.id.tv_diary_date);
-        edtTitle = view.findViewById(R.id.edt_diary_title);
-        edtContent = view.findViewById(R.id.edt_diary_content);
-        btnSave = view.findViewById(R.id.btn_save_diary);
-
         tvHeaderTitle.setText("Nhật Ký");
+        diaryList = new ArrayList<>();
+        diaryAdapter = new DiaryAdapter(diaryList);
+        rvDiary.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvDiary.setAdapter(diaryAdapter);
 
-        setupCurrentDate();
+        loadDiaries();
 
-        btnSave.setOnClickListener(v -> saveDiaryToFirebase());
+        fabAddDiary.setOnClickListener(v -> {
+            // Chuyển sang trang thêm Nhật ký (Tên Fragment nhập liệu của bạn)
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.calendar_container, new AddDiaryFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         return view;
     }
 
-    private void setupCurrentDate() {
-        Date currentDate = new Date();
-        SimpleDateFormat displayFormat = new SimpleDateFormat("'Hôm nay, 'dd/MM/yyyy", new Locale("vi", "VN"));
-        tvDate.setText(displayFormat.format(currentDate));
+    private void loadDiaries() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
 
-        // Format chuẩn để lưu database: yyyy-MM-dd
-        SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        databaseDateString = dbFormat.format(currentDate);
-    }
+        String currentUserId = currentUser.getUid();
 
-    private void saveDiaryToFirebase() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(getContext(), "Vui lòng đăng nhập trước!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Truy vấn bảng Diaries, lấy các bài của user đang đăng nhập
+        Query query = FirebaseDatabase.getInstance().getReference("Diaries")
+                .orderByChild("userId").equalTo(currentUserId);
 
-        String title = edtTitle.getText().toString().trim();
-        String content = edtContent.getText().toString().trim();
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                diaryList.clear();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Diary diary = ds.getValue(Diary.class);
+                    if (diary != null) {
+                        // Thêm vào đầu danh sách để bài mới nhất hiện lên trên cùng
+                        diaryList.add(0, diary);
+                    }
+                }
+                diaryAdapter.notifyDataSetChanged();
+            }
 
-        if (TextUtils.isEmpty(content)) {
-            Toast.makeText(getContext(), "Bạn chưa viết nội dung nhật ký!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 1. Tạo ID ngẫu nhiên cho bài nhật ký
-        String diaryId = mDatabase.child("Diaries").push().getKey();
-
-        // 2. Gom dữ liệu
-        HashMap<String, Object> diaryMap = new HashMap<>();
-        diaryMap.put("id", diaryId);
-        diaryMap.put("userId", currentUser.getUid());
-        diaryMap.put("title", title);
-        diaryMap.put("content", content);
-        diaryMap.put("date", databaseDateString);
-        diaryMap.put("timestamp", System.currentTimeMillis());
-
-        // 3. Đẩy lên Firebase
-        if (diaryId != null) {
-            mDatabase.child("Diaries").child(diaryId).setValue(diaryMap)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Đã lưu nhật ký!", Toast.LENGTH_SHORT).show();
-                            // Reset lại nội dung để viết bài mới nếu muốn
-                            edtTitle.setText("");
-                            edtContent.setText("");
-                        } else {
-                            Toast.makeText(getContext(), "Lỗi: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("Firebase", "Lỗi tải nhật ký: " + error.getMessage());
+            }
+        });
     }
 }
