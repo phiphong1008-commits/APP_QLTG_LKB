@@ -1,8 +1,11 @@
 package dpphong.ntu.appqlcv.ck;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -25,6 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -125,6 +129,7 @@ public class AddTodoFragment extends Fragment {
 
         return view;
     }
+    // Hàm cài đặt báo thức
 
     // Hàm tạo hộp thoại thông báo (Thay thế cho Toast)
     private void showAlertDialog(String title, String message) {
@@ -218,6 +223,9 @@ public class AddTodoFragment extends Fragment {
             // Dùng updateChildren để chỉ cập nhật các trường bị đổi, không làm mất isCompleted
             mDatabase.child("Tasks").child(taskToEdit.getId()).updateChildren(updateMap)
                     .addOnSuccessListener(aVoid -> {
+                        // BƯỚC MỚI: Gọi hàm đặt báo thức khi Cập nhật thành công
+                        scheduleNotification(title, desc, date, time, taskToEdit.getId());
+
                         getParentFragmentManager().popBackStack();
                     })
                     .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
@@ -243,10 +251,66 @@ public class AddTodoFragment extends Fragment {
             if (taskId != null) {
                 mDatabase.child("Tasks").child(taskId).setValue(taskMap)
                         .addOnSuccessListener(aVoid -> {
+                            // BƯỚC MỚI: Gọi hàm đặt báo thức khi Thêm mới thành công
+                            scheduleNotification(title, desc, date, time, taskId);
+
                             getParentFragmentManager().popBackStack();
                         })
                         .addOnFailureListener(e -> showAlertDialog("Lỗi", e.getMessage()));
             }
+        }
+    }
+
+    // ==========================================
+    // HÀM XỬ LÝ HẸN GIỜ BÁO THỨC (CHẠY NGẦM)
+    // ==========================================
+    private void scheduleNotification(String title, String desc, String date, String time, String taskId) {
+        // Nếu người dùng không chọn giờ, thì không báo thức
+        if (time.equals("Chọn giờ") || time.trim().isEmpty()) return;
+
+        try {
+            // 1. Ghép ngày và giờ lại để phân tích (VD: "2026-06-04 15:30")
+            String dateTimeString = date + " " + time;
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+            java.util.Date dateObj = sdf.parse(dateTimeString);
+
+            if (dateObj == null) return;
+
+            // Lấy thời gian mốc báo thức (tính bằng mili-giây)
+            long alarmTimeMillis = dateObj.getTime();
+
+            // Nếu thời gian cài đặt đã trôi qua trong quá khứ thì bỏ qua không đặt báo thức nữa
+            if (alarmTimeMillis <= System.currentTimeMillis()) return;
+
+            // 2. Chuẩn bị "Gói hàng" gửi cho NotificationReceiver
+            android.app.AlarmManager alarmManager = (android.app.AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
+            android.content.Intent intent = new android.content.Intent(requireContext(), NotificationReceiver.class);
+            intent.putExtra("TASK_TITLE", title);
+            intent.putExtra("TASK_DESC", desc);
+
+            // Dùng hashCode của taskId để làm mã ID phân biệt các báo thức khác nhau
+            int requestCode = taskId.hashCode();
+
+            // PendingIntent giúp hệ thống có quyền chạy Intent này trong tương lai dù app đang tắt
+            android.app.PendingIntent pendingIntent = android.app.PendingIntent.getBroadcast(
+                    requireContext(),
+                    requestCode,
+                    intent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+            );
+
+            // 3. Giao cho Đồng hồ báo thức của hệ thống xử lý
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, alarmTimeMillis, pendingIntent);
+            } else {
+                alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, alarmTimeMillis, pendingIntent);
+            }
+
+            android.util.Log.d("ALARM", "Đã đặt báo thức thành công lúc: " + dateTimeString);
+
+        } catch (Exception e) {
+            android.util.Log.e("ALARM", "Lỗi đặt báo thức: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
