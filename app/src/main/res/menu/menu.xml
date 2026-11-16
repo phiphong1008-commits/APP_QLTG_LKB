@@ -5,7 +5,7 @@
     <item
         android:id="@+id/calendar"
         android:icon="@drawable/meeting_event_christmas_agenda_calender_schedule_date_calendar_time_icon_258647"
-        android:title="Lịch " />
+        android:title="Lịch" />
     <item
         android:id="@+id/todo"
         android:icon="@drawable/list_task_tasklist_checklist_check_icon_145964"

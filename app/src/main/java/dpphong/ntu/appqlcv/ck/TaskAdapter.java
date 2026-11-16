@@ -1,21 +1,22 @@
 package dpphong.ntu.appqlcv.ck;
 
-import android.graphics.Color;
-import android.graphics.Paint; // Thêm thư viện Paint cho hiệu ứng gạch chữ
+import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox; // Thêm thư viện CheckBox
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.List;
 
@@ -43,17 +44,23 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
     public void onBindViewHolder(@NonNull TaskViewHolder holder, int position) {
         Task task = taskList.get(position);
 
-        // Set Tiêu đề
         holder.tvTitle.setText(task.getTitle() != null ? task.getTitle() : "Không có tiêu đề");
 
-        // Nối thêm Giờ (time) vào phần mô tả cho trực quan
-        String timeStr = task.getTime() != null ? task.getTime() : "";
-        String descStr = task.getDescription() != null ? task.getDescription() : "";
-        holder.tvDesc.setText(timeStr + " - " + descStr);
+        // Giờ và mô tả hiển thị gọn gàng, ẩn nếu không có dữ liệu
+        String timeStr = task.getTime() != null ? task.getTime().trim() : "";
+        String descStr = task.getDescription() != null ? task.getDescription().trim() : "";
 
-        // ========================================================
-        // --- HIỂN THỊ ICON ĐÃ CHỌN TỪ FIREBASE ---
-        // ========================================================
+        int timeVisibility = timeStr.isEmpty() ? View.GONE : View.VISIBLE;
+        holder.tvTime.setVisibility(timeVisibility);
+        holder.ivTimeIcon.setVisibility(timeVisibility);
+        if (!timeStr.isEmpty()) {
+            holder.tvTime.setText(timeStr);
+        }
+
+        holder.tvDesc.setText(descStr);
+        holder.tvDesc.setVisibility(descStr.isEmpty() ? View.GONE : View.VISIBLE);
+
+        // Icon theo loại công việc
         if (task.getIcon() != null) {
             switch (task.getIcon()) {
                 case "study":
@@ -70,33 +77,43 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                     break;
             }
         } else {
-            // Hiển thị mặc định nếu task cũ trên Firebase chưa có icon
             holder.ivIcon.setImageResource(R.drawable.ic_work);
         }
 
-        // ========================================================
-        // --- XỬ LÝ CHECKBOX VÀ TRẠNG THÁI (XONG/CHƯA XONG) ---
-        // ========================================================
-
-        // 1. Tắt Listener tạm thời để không bị lỗi gọi nhầm khi cuộn danh sách (Recycle)
-        holder.cbStatus.setOnCheckedChangeListener(null);
-
-        // 2. Cài đặt trạng thái CheckBox theo dữ liệu tải về
-        holder.cbStatus.setChecked(task.isCompleted());
-
-        // 3. Cài đặt hiệu ứng gạch ngang chữ ban đầu
-        if (task.isCompleted()) {
-            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        } else {
-            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+        // Màu nhấn và nhãn mức độ ưu tiên
+        String priority = task.getPriority() != null ? task.getPriority() : "Vừa";
+        switch (priority) {
+            case "Cao":
+                holder.tvPriority.setText("Cao");
+                holder.tvPriority.setBackgroundResource(R.drawable.bg_pill_high);
+                holder.tvPriority.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.priorityHigh));
+                holder.viewIndicator.setBackgroundResource(R.drawable.bg_pill_high);
+                break;
+            case "Thấp":
+                holder.tvPriority.setText("Thấp");
+                holder.tvPriority.setBackgroundResource(R.drawable.bg_pill_low);
+                holder.tvPriority.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.priorityLow));
+                holder.viewIndicator.setBackgroundResource(R.drawable.bg_pill_low);
+                break;
+            default:
+                holder.tvPriority.setText("Vừa");
+                holder.tvPriority.setBackgroundResource(R.drawable.bg_pill_medium);
+                holder.tvPriority.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.priorityMedium));
+                holder.viewIndicator.setBackgroundResource(R.drawable.bg_pill_medium);
+                break;
         }
 
-        // 1. XỬ LÝ XÓA (NHẤN GIỮ)
+        // Tắt Listener tạm thời để không bị lỗi gọi nhầm khi cuộn danh sách
+        holder.cbStatus.setOnCheckedChangeListener(null);
+        holder.cbStatus.setChecked(task.isCompleted());
+        applyCompletedStyle(holder, task.isCompleted());
+
+        // XỬ LÝ XÓA (NHẤN GIỮ)
         holder.cardContainer.setOnLongClickListener(v -> {
-            new AlertDialog.Builder(v.getContext())
+            new MaterialAlertDialogBuilder(v.getContext())
                     .setTitle("Xóa công việc")
                     .setMessage("Bạn có chắc chắn muốn xóa công việc '" + task.getTitle() + "' không?")
-                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .setIcon(R.drawable.ic_delete)
                     .setPositiveButton("Xóa", (dialog, which) -> {
                         if (task.getId() != null) {
                             com.google.firebase.database.FirebaseDatabase.getInstance()
@@ -110,7 +127,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             return true;
         });
 
-        // 2. XỬ LÝ CHỈNH SỬA (NHẤN CHẠM)
+        // XỬ LÝ CHỈNH SỬA (NHẤN CHẠM)
         holder.cardContainer.setOnClickListener(v -> {
             AddTodoFragment editFragment = new AddTodoFragment();
             Bundle bundle = new Bundle();
@@ -124,14 +141,9 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                     .commit();
         });
 
-        // 4. Lắng nghe sự kiện khi người dùng tự tay bấm vào CheckBox
+        // Lắng nghe sự kiện khi người dùng bấm vào CheckBox
         holder.cbStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-            } else {
-                holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-            }
-
+            applyCompletedStyle(holder, isChecked);
             task.setCompleted(isChecked);
 
             if (task.getId() != null) {
@@ -143,28 +155,28 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                         .addOnFailureListener(e -> {
                             holder.cbStatus.setChecked(!isChecked);
                             task.setCompleted(!isChecked);
+                            applyCompletedStyle(holder, !isChecked);
                             Log.e("TaskAdapter", "Lỗi update Firebase: " + e.getMessage());
                         });
             }
         });
-        // ========================================================
+    }
 
-        // Đổi màu background theo mức độ ưu tiên
-        if (task.getPriority() != null) {
-            switch (task.getPriority()) {
-                case "Cao":
-                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFCDD2"));
-                    break;
-                case "Vừa":
-                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFF9C4"));
-                    break;
-                case "Thấp":
-                    holder.cardContainer.setCardBackgroundColor(Color.parseColor("#C8E6C9"));
-                    break;
-                default:
-                    holder.cardContainer.setCardBackgroundColor(Color.WHITE);
-                    break;
-            }
+    private void applyCompletedStyle(TaskViewHolder holder, boolean completed) {
+        if (completed) {
+            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            holder.tvTitle.setAlpha(0.5f);
+            holder.tvDesc.setAlpha(0.45f);
+            holder.ivIcon.setAlpha(0.45f);
+            holder.tvTime.setAlpha(0.5f);
+            holder.tvPriority.setAlpha(0.6f);
+        } else {
+            holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            holder.tvTitle.setAlpha(1f);
+            holder.tvDesc.setAlpha(1f);
+            holder.ivIcon.setAlpha(1f);
+            holder.tvTime.setAlpha(1f);
+            holder.tvPriority.setAlpha(1f);
         }
     }
 
@@ -175,16 +187,21 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
     public static class TaskViewHolder extends RecyclerView.ViewHolder {
         CardView cardContainer;
-        ImageView ivIcon;
-        TextView tvTitle, tvDesc;
+        View viewIndicator;
+        ImageView ivIcon, ivTimeIcon;
+        TextView tvTitle, tvDesc, tvTime, tvPriority;
         CheckBox cbStatus;
 
         public TaskViewHolder(@NonNull View itemView) {
             super(itemView);
             cardContainer = itemView.findViewById(R.id.card_task_container);
+            viewIndicator = itemView.findViewById(R.id.view_priority_indicator);
             ivIcon = itemView.findViewById(R.id.iv_task_icon);
+            ivTimeIcon = itemView.findViewById(R.id.iv_task_time_icon);
             tvTitle = itemView.findViewById(R.id.tv_task_title);
             tvDesc = itemView.findViewById(R.id.tv_task_desc);
+            tvTime = itemView.findViewById(R.id.tv_task_time);
+            tvPriority = itemView.findViewById(R.id.tv_task_priority);
             cbStatus = itemView.findViewById(R.id.cb_task_status);
         }
     }

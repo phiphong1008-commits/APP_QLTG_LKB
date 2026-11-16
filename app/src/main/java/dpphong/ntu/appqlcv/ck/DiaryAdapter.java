@@ -5,11 +5,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHolder> {
 
@@ -29,17 +35,20 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
     @Override
     public void onBindViewHolder(@NonNull DiaryViewHolder holder, int position) {
         Diary diary = diaryList.get(position);
-        holder.tvTitle.setText(diary.getTitle());
-        holder.tvDate.setText(diary.getDate());
-        holder.tvContent.setText(diary.getContent());
+
+        holder.tvTitle.setText(diary.getTitle() != null && !diary.getTitle().trim().isEmpty()
+                ? diary.getTitle()
+                : "Nhật ký không tiêu đề");
+        holder.tvDate.setText(formatDate(diary.getDate()));
+        holder.tvContent.setText(diary.getContent() != null ? diary.getContent() : "");
+
         holder.itemView.setOnLongClickListener(v -> {
-            new AlertDialog.Builder(v.getContext())
+            new MaterialAlertDialogBuilder(v.getContext())
                     .setTitle("Xóa nhật ký")
                     .setMessage("Bạn có chắc chắn muốn xóa bài viết này không?")
-                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .setIcon(R.drawable.ic_delete)
                     .setPositiveButton("Xóa", (dialog, which) -> {
                         if (diary.getId() != null) {
-                            // Lưu ý: Thay "Diaries" bằng tên bảng nhật ký trên Firebase của bạn
                             com.google.firebase.database.FirebaseDatabase.getInstance()
                                     .getReference("Diaries")
                                     .child(diary.getId())
@@ -51,19 +60,32 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
             return true;
         });
 
-// 2. XỬ LÝ CHỈNH SỬA (NHẤN CHẠM)
+        // XỬ LÝ CHỈNH SỬA (NHẤN CHẠM)
         holder.itemView.setOnClickListener(v -> {
             AddDiaryFragment editFragment = new AddDiaryFragment();
             Bundle bundle = new Bundle();
-            bundle.putSerializable("DIARY_EDIT", diary); // Gói object Diary lại
+            bundle.putSerializable("DIARY_EDIT", diary);
             editFragment.setArguments(bundle);
 
             AppCompatActivity activity = (AppCompatActivity) v.getContext();
             activity.getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.calendar_container, editFragment) // Chỉnh lại ID container của bạn nếu khác
+                    .replace(R.id.calendar_container, editFragment)
                     .addToBackStack(null)
                     .commit();
         });
+    }
+
+    private String formatDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return "--/--";
+        try {
+            SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date date = input.parse(dateStr);
+            if (date != null) {
+                return new SimpleDateFormat("dd/MM", Locale.getDefault()).format(date);
+            }
+        } catch (Exception ignored) {
+        }
+        return dateStr;
     }
 
     @Override

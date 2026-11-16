@@ -2,7 +2,6 @@ package dpphong.ntu.appqlcv.ck;
 
 import static androidx.core.content.ContentProviderCompat.requireContext;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
@@ -21,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -127,13 +127,28 @@ public class AddTodoFragment extends Fragment {
             }
         });
 
+        // Nếu mở từ màn hình Lịch, điền sẵn ngày đang chọn
+        if (taskToEdit == null && getArguments() != null) {
+            String prefillDate = getArguments().getString("TASK_DATE");
+            if (prefillDate != null && !prefillDate.isEmpty()) {
+                tvDate.setText(prefillDate);
+                try {
+                    Date parsed = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(prefillDate);
+                    if (parsed != null) {
+                        myCalendar.setTime(parsed);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
         return view;
     }
     // Hàm cài đặt báo thức
 
     // Hàm tạo hộp thoại thông báo (Thay thế cho Toast)
     private void showAlertDialog(String title, String message) {
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(title)
                 .setMessage(message)
                 .setIcon(android.R.drawable.ic_dialog_info)

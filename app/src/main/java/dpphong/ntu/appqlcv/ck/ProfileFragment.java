@@ -25,7 +25,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView tvProfileName, tvProfileEmail;
+    private TextView tvProfileName, tvProfileEmail, tvProfileAvatar;
     private TextView tvStatTotal, tvStatCompleted, tvStatPending;
     private Button btnLogout;
     private FirebaseAuth mAuth;
@@ -40,6 +40,7 @@ public class ProfileFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         tvProfileName = view.findViewById(R.id.tv_profile_name);
         tvProfileEmail = view.findViewById(R.id.tv_profile_email);
+        tvProfileAvatar = view.findViewById(R.id.tv_profile_avatar);
         tvStatTotal = view.findViewById(R.id.tv_stat_total);
         tvStatCompleted = view.findViewById(R.id.tv_stat_completed);
         tvStatPending = view.findViewById(R.id.tv_stat_pending);
@@ -92,11 +93,21 @@ public class ProfileFragment extends Fragment {
             tvProfileEmail.setText(currentUser.getEmail());
 
             String displayName = currentUser.getDisplayName();
+            String name = null;
             if (displayName != null && !displayName.isEmpty()) {
-                tvProfileName.setText(displayName);
+                name = displayName;
             } else if (currentUser.getEmail() != null) {
                 // Cắt phần tên trước ký tự @ trong email nếu không có DisplayName
-                tvProfileName.setText(currentUser.getEmail().split("@")[0]);
+                name = currentUser.getEmail().split("@")[0];
+            }
+
+            if (name != null) {
+                tvProfileName.setText(name);
+                // Avatar chữ cái đầu, thân thiện hơn ảnh mặc định
+                String trimmed = name.trim();
+                if (!trimmed.isEmpty()) {
+                    tvProfileAvatar.setText(trimmed.substring(0, 1).toUpperCase());
+                }
             }
         }
     }
