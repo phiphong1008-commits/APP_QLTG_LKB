@@ -19,6 +19,11 @@ public class NotificationReceiver extends BroadcastReceiver {
         // 1. Nhận "gói hàng" (Tiêu đề và mô tả) từ nơi gửi
         String title = intent.getStringExtra("TASK_TITLE");
         String desc = intent.getStringExtra("TASK_DESC");
+        String taskId = intent.getStringExtra("TASK_ID");
+        long offset = intent.getLongExtra("TASK_OFFSET", 0L);
+
+        if (title == null) title = "Công việc";
+        if (desc == null) desc = "Bạn có một công việc cần chú ý.";
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -40,16 +45,19 @@ public class NotificationReceiver extends BroadcastReceiver {
                 context, 0, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         // 4. Thiết kế hình dáng của cái Thông báo
+        String heading = offset > 0 ? "Sắp đến giờ: " : "Đến giờ rồi: ";
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_event) // BẠN NHỚ THAY ICON NÀY bằng icon có sẵn trong app của bạn
-                .setContentTitle("Đến giờ rồi: " + title)
+                .setSmallIcon(R.drawable.ic_event)
+                .setContentTitle(heading + title)
                 .setContentText(desc)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true) // Bấm vào thì tự tắt
                 .setContentIntent(pendingIntent);
 
-        // 5. Bắn thông báo lên màn hình (Dùng thời gian hiện tại làm ID để các thông báo không đè lên nhau)
-        int notificationId = (int) System.currentTimeMillis();
+        // 5. Bắn thông báo lên màn hình (mỗi mốc nhắc có ID riêng)
+        int notificationId = taskId != null
+                ? (taskId + "#" + offset).hashCode()
+                : (int) System.currentTimeMillis();
         notificationManager.notify(notificationId, builder.build());
     }
 }

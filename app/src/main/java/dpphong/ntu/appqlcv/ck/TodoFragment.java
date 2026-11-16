@@ -5,15 +5,18 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.firebase.auth.FirebaseAuth;
@@ -47,6 +50,10 @@ public class TodoFragment extends Fragment {
     private Chip chipAll;
     private int filterMode = 0; // 0: tất cả, 1: chưa xong, 2: đã xong
 
+    private ChipGroup chipGroupLists;
+    private final List<TaskList> taskLists = new ArrayList<>();
+    private String listFilterId = null;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -64,6 +71,8 @@ public class TodoFragment extends Fragment {
         Chip chipPending = view.findViewById(R.id.chip_pending);
         Chip chipDone = view.findViewById(R.id.chip_done);
         TextView tvSubtitle = view.findViewById(R.id.tv_todo_subtitle);
+        chipGroupLists = view.findViewById(R.id.chip_group_lists);
+        ImageButton btnOpenSearch = view.findViewById(R.id.btn_open_search);
 
         // Ngày hôm nay hiển thị thân thiện
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd/MM", new Locale("vi", "VN"));
@@ -99,6 +108,13 @@ public class TodoFragment extends Fragment {
 
         // Tải dữ liệu công việc hôm nay
         loadTodayTasks();
+        loadLists();
+
+        // Mở màn hình tìm kiếm & lọc nâng cao
+        btnOpenSearch.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
+                .replace(R.id.calendar_container, new SearchFragment())
+                .addToBackStack(null)
+                .commit());
 
         // Xử lý sự kiện khi ấn nút (+)
         fabAddTodo.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
@@ -107,6 +123,106 @@ public class TodoFragment extends Fragment {
                 .commit());
 
         return view;
+    }
+
+    /**
+     * Tải danh sách của người dùng và tạo các chip lọc động.
+     */
+    private void loadLists() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        Query query = FirebaseDatabase.getInstance().getReference("Lists")
+                .orderByChild("userId").equalTo(currentUser.getUid());
+
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                taskLists.clear();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    TaskList taskList = child.getValue(TaskList.class);
+                    if (taskList != null) {
+                        if (taskList.getId() == null) taskList.setId(child.getKey());
+                        taskLists.add(taskList);
+                    }
+                }
+                buildListChips();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("Firebase", "Lỗi tải danh sách: " + error.getMessage());
+            }
+        });
+    }
+
+    private void buildListChips() {
+        if (!isAdded() || chipGroupLists == null) return;
+
+        chipGroupLists.setOnCheckedStateChangeListener(null);
+
+        // Giữ lại chip "Mọi danh sách" có sẵn, xóa các chip động cũ
+        while (chipGroupLists.getChildCount() > 1) {
+            chipGroupLists.removeViewAt(1);
+        }
+
+        for (TaskList taskList : taskLists) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(taskList.getName() != null ? taskList.getName() : "Danh sách");
+            chip.setTag(taskList.getId());
+            chip.setCheckable(true);
+            chip.setCheckedIconVisible(false);
+            chip.setTextSize(12f);
+            chip.setTypeface(null, android.graphics.Typeface.BOLD);
+            chip.setTextColor(ContextCompat.getColorStateList(requireContext(), R.color.chip_text_color));
+            chip.setChipBackgroundColorResource(R.color.chip_bg_color);
+            chip.setChipCornerRadius(20f * getResources().getDisplayMetrics().density);
+            chip.setChipMinHeight(34f * getResources().getDisplayMetrics().density);
+            chip.setEnsureMinTouchTargetSize(false);
+            chip.setChipStrokeWidth(0f);
+            chip.setId(View.generateViewId());
+
+            if (listFilterId != null && listFilterId.equals(taskList.getId())) {
+                chip.setChecked(true);
+            }
+
+            chipGroupLists.addView(chip);
+        }
+
+        chipGroupLists.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            int checkedId = group.getCheckedChipId();
+            if (checkedId == View.NO_ID || checkedId == R.id.chip_list_all) {
+                listFilterId = null;
+            } else {
+                View checkedChip = group.findViewById(checkedId);
+                listFilterId = checkedChip != null && checkedChip.getTag() != null
+                        ? checkedChip.getTag().toString()
+                        : null;
+            }
+            renderTasks();
+        });
+
+        // Nếu danh sách đang lọc bị xóa, quay về "Mọi danh sách"
+        if (listFilterId != null) {
+            boolean stillExists = false;
+            int chipId = View.NO_ID;
+            for (int i = 0; i < chipGroupLists.getChildCount(); i++) {
+                View child = chipGroupLists.getChildAt(i);
+                if (child.getTag() != null && listFilterId.equals(child.getTag().toString())) {
+                    stillExists = true;
+                    chipId = child.getId();
+                    break;
+                }
+            }
+            if (stillExists) {
+                chipGroupLists.check(chipId);
+            } else {
+                listFilterId = null;
+                chipGroupLists.check(R.id.chip_list_all);
+            }
+        } else {
+            chipGroupLists.check(R.id.chip_list_all);
+        }
     }
 
     private void loadTodayTasks() {
@@ -132,6 +248,12 @@ public class TodoFragment extends Fragment {
                     }
                 }
                 renderTasks();
+
+                // Cập nhật bộ nhớ đệm cho widget màn hình chính
+                if (isAdded() && getContext() != null) {
+                    TaskCache.saveToday(getContext(), todayTasks);
+                    TodayWidgetProvider.updateWidget(getContext());
+                }
             }
 
             @Override
@@ -167,6 +289,7 @@ public class TodoFragment extends Fragment {
 
         List<Task> display = new ArrayList<>();
         for (Task task : todayTasks) {
+            if (listFilterId != null && !listFilterId.equals(task.getListId())) continue;
             if (filterMode == 1 && task.isCompleted()) continue;
             if (filterMode == 2 && !task.isCompleted()) continue;
             display.add(task);
@@ -178,7 +301,10 @@ public class TodoFragment extends Fragment {
         rvTodoToday.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
 
         if (isEmpty) {
-            if (total == 0) {
+            if (listFilterId != null && total > 0) {
+                tvEmptyTitle.setText("Danh sách này chưa có việc hôm nay");
+                tvEmptyMessage.setText("Chọn danh sách khác hoặc thêm việc mới nhé");
+            } else if (total == 0) {
                 tvEmptyTitle.setText("Hôm nay chưa có việc nào");
                 tvEmptyMessage.setText("Nhấn nút + để thêm việc mới nhé");
             } else if (filterMode == 1) {

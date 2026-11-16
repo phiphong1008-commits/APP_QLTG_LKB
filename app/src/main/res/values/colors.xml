@@ -4,12 +4,14 @@
     <color name="colorPrimary">#4C6FFF</color>
     <color name="colorPrimaryDark">#3452CC</color>
     <color name="colorPrimaryContainer">#EEF1FF</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
     <color name="colorAccent">#FF7A59</color>
     <color name="colorSecondary">#FF7A59</color>
 
     <!-- Nền & bề mặt -->
     <color name="colorBackground">#F6F7FB</color>
     <color name="colorSurface">#FFFFFF</color>
+    <color name="colorCard">#FFFFFF</color>
     <color name="colorSurfaceMuted">#F2F4F9</color>
     <color name="colorInputBackground">#FFFFFF</color>
     <color name="colorInputBorder">#E4E8F1</color>

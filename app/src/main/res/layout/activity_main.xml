@@ -30,7 +30,7 @@
         android:id="@+id/bottomNavigationView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/colorSurface"
         android:elevation="12dp"
         app:itemActiveIndicatorStyle="@style/App.BottomNavActiveIndicator"
         app:itemIconTint="@color/nav_item_color"

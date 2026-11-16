@@ -1,6 +1,8 @@
 package dpphong.ntu.appqlcv.ck;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -54,6 +57,24 @@ public class ProfileFragment extends Fragment {
         btnGoToTodo = view.findViewById(R.id.btn_go_to_todo);
         btnGoToDiary = view.findViewById(R.id.btn_go_to_diary);
 
+        view.findViewById(R.id.btn_edit_profile).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new EditProfileFragment())
+                        .addToBackStack(null)
+                        .commit());
+
+        view.findViewById(R.id.btn_manage_lists).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new ListsFragment())
+                        .addToBackStack(null)
+                        .commit());
+
+        view.findViewById(R.id.btn_settings).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new SettingsFragment())
+                        .addToBackStack(null)
+                        .commit());
+
 // Xử lý khi bấm "Quản lý công việc" -> Chuyển sang tab Todo
         btnGoToTodo.setOnClickListener(v -> {
             BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottomNavigationView);
@@ -89,26 +110,56 @@ public class ProfileFragment extends Fragment {
 
     private void loadUserInfo() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            tvProfileEmail.setText(currentUser.getEmail());
+        if (currentUser == null) return;
 
-            String displayName = currentUser.getDisplayName();
-            String name = null;
-            if (displayName != null && !displayName.isEmpty()) {
-                name = displayName;
-            } else if (currentUser.getEmail() != null) {
-                // Cắt phần tên trước ký tự @ trong email nếu không có DisplayName
-                name = currentUser.getEmail().split("@")[0];
-            }
+        tvProfileEmail.setText(currentUser.getEmail());
 
-            if (name != null) {
-                tvProfileName.setText(name);
-                // Avatar chữ cái đầu, thân thiện hơn ảnh mặc định
-                String trimmed = name.trim();
-                if (!trimmed.isEmpty()) {
-                    tvProfileAvatar.setText(trimmed.substring(0, 1).toUpperCase());
-                }
-            }
+        String displayName = currentUser.getDisplayName();
+        String name = null;
+        if (displayName != null && !displayName.isEmpty()) {
+            name = displayName;
+        } else if (currentUser.getEmail() != null) {
+            name = currentUser.getEmail().split("@")[0];
+        }
+
+        if (name != null) {
+            tvProfileName.setText(name);
+            updateAvatarLetter(name);
+        }
+
+        // Đọc tên và màu đại diện đã lưu trong Firebase
+        FirebaseDatabase.getInstance().getReference("Users").child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!isAdded()) return;
+
+                        String savedName = snapshot.child("displayName").getValue(String.class);
+                        String savedColor = snapshot.child("avatarColor").getValue(String.class);
+
+                        if (savedName != null && !savedName.isEmpty()) {
+                            tvProfileName.setText(savedName);
+                            updateAvatarLetter(savedName);
+                        }
+                        if (savedColor != null && !savedColor.isEmpty()) {
+                            try {
+                                ViewCompat.setBackgroundTintList(tvProfileAvatar,
+                                        ColorStateList.valueOf(Color.parseColor(savedColor)));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+    }
+
+    private void updateAvatarLetter(String name) {
+        String trimmed = name.trim();
+        if (!trimmed.isEmpty()) {
+            tvProfileAvatar.setText(trimmed.substring(0, 1).toUpperCase());
         }
     }
 

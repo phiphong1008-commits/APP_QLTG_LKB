@@ -82,7 +82,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="@color/colorCard"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/colorInputBorder"
@@ -161,7 +161,7 @@
                 android:insetBottom="0dp"
                 android:text="Lưu nhật ký"
                 android:textAllCaps="false"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/colorPrimary"
@@ -169,7 +169,7 @@
                 app:icon="@drawable/ic_check_circle"
                 app:iconGravity="textStart"
                 app:iconPadding="8dp"
-                app:iconTint="@color/white" />
+                app:iconTint="?attr/colorOnPrimary" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

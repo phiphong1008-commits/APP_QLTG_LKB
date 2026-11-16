@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bảng màu tối -->
+    <color name="colorPrimary">#8FA7FF</color>
+    <color name="colorPrimaryDark">#C7D2FF</color>
+    <color name="colorPrimaryContainer">#222C49</color>
+    <color name="colorOnPrimary">#101528</color>
+    <color name="colorAccent">#FF9A7A</color>
+    <color name="colorSecondary">#FF9A7A</color>
+
+    <color name="colorBackground">#0F1422</color>
+    <color name="colorSurface">#171F31</color>
+    <color name="colorCard">#171F31</color>
+    <color name="colorSurfaceMuted">#232D42</color>
+    <color name="colorInputBackground">#171F31</color>
+    <color name="colorInputBorder">#2C374E</color>
+    <color name="colorDivider">#232C40</color>
+
+    <color name="colorTextPrimary">#EDF1FA</color>
+    <color name="colorTextSecondary">#A9B4C7</color>
+    <color name="colorTextHint">#7C879C</color>
+    <color name="colorNavInactive">#8B96AA</color>
+
+    <color name="colorSuccess">#4ADE80</color>
+    <color name="colorSuccessContainer">#143326</color>
+    <color name="colorWarning">#FBBF24</color>
+    <color name="colorWarningContainer">#33290F</color>
+    <color name="colorDanger">#F87171</color>
+    <color name="colorDangerContainer">#3A2024</color>
+
+    <color name="priorityHigh">#F87171</color>
+    <color name="priorityHighBg">#3A2024</color>
+    <color name="priorityMedium">#FBBF24</color>
+    <color name="priorityMediumBg">#33290F</color>
+    <color name="priorityLow">#4ADE80</color>
+    <color name="priorityLowBg">#143326</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

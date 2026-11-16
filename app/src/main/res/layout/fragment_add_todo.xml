@@ -68,7 +68,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="@color/colorCard"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/colorInputBorder"
@@ -226,6 +226,98 @@
                         android:textColor="@color/colorTextPrimary"
                         android:textColorHint="@color/colorTextHint"
                         android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="Danh sách"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_task_list"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:hint="Chọn danh sách"
+                        app:boxBackgroundColor="@color/colorInputBackground"
+                        app:boxCornerRadiusBottomEnd="16dp"
+                        app:boxCornerRadiusBottomStart="16dp"
+                        app:boxCornerRadiusTopEnd="16dp"
+                        app:boxCornerRadiusTopStart="16dp"
+                        app:boxStrokeColor="@color/colorPrimary"
+                        app:boxStrokeWidth="1dp"
+                        app:endIconTint="@color/colorPrimary">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/actv_task_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:paddingVertical="14dp"
+                            android:textColor="@color/colorTextPrimary"
+                            android:textColorHint="@color/colorTextHint"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="Việc con"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/edt_subtask"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_rounded_input"
+                            android:hint="Thêm việc nhỏ..."
+                            android:imeOptions="actionDone"
+                            android:inputType="text"
+                            android:paddingHorizontal="16dp"
+                            android:singleLine="true"
+                            android:textColor="@color/colorTextPrimary"
+                            android:textColorHint="@color/colorTextHint"
+                            android:textSize="14sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_add_subtask"
+                            android:layout_width="52dp"
+                            android:layout_height="52dp"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="Thêm việc con"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:padding="0dp"
+                            app:backgroundTint="@color/colorPrimaryContainer"
+                            app:cornerRadius="16dp"
+                            app:icon="@drawable/ic_add"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp"
+                            app:iconTint="@color/colorPrimary" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/container_subtasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:orientation="vertical" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -233,7 +325,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="@color/colorCard"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/colorInputBorder"
@@ -390,6 +482,100 @@
                             android:textSize="14sp"
                             android:textStyle="bold" />
                     </RadioGroup>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="Lặp lại"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_recurrence"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        app:chipSpacingHorizontal="6dp"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_recur_none"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Không lặp" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_recur_daily"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hằng ngày" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_recur_weekly"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hằng tuần" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_recur_monthly"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hằng tháng" />
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="Nhắc nhở (có thể chọn nhiều)"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_reminders"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        app:chipSpacingHorizontal="6dp">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_remind_on_time"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Đúng giờ" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_remind_10m"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Trước 10 phút" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_remind_1h"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Trước 1 giờ" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_remind_1d"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Trước 1 ngày" />
+                    </com.google.android.material.chip.ChipGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -402,7 +588,7 @@
                 android:insetBottom="0dp"
                 android:text="Lưu công việc"
                 android:textAllCaps="false"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/colorPrimary"
@@ -410,7 +596,7 @@
                 app:icon="@drawable/ic_check_circle"
                 app:iconGravity="textStart"
                 app:iconPadding="8dp"
-                app:iconTint="@color/white" />
+                app:iconTint="?attr/colorOnPrimary" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

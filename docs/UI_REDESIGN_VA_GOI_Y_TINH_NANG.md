@@ -66,28 +66,25 @@ Tham khảo thêm:
 
 ## 3. Danh sách tính năng có thể bổ sung
 
-### P0 — Nên làm tiếp theo (giá trị cao, hợp kiến trúc hiện tại)
-1. **Công việc lặp lại** (hằng ngày / tuần / tháng, các ngày trong tuần).
-   - Thêm `recurrence` vào `Task`, tạo task kế tiếp khi hoàn thành hoặc dùng Cloud Function.
-   - Tham khảo: TickTick, Todoist.
-2. **Nhiều lời nhắc cho một việc** (trước 5 phút, 1 giờ, 1 ngày) + nhắc theo giờ.
-   - Mở rộng `NotificationReceiver` + `AlarmManager`, lưu mảng `reminders`.
-3. **Tìm kiếm & lọc nâng cao** (theo từ khóa, khoảng ngày, ưu tiên, trạng thái, loại việc).
-   - Thêm SearchView + chip lọc; có thể lọc cục bộ trước, sau đó dùng Firebase Query.
-4. **Danh sách / dự án / nhãn** (Học tập, Công việc, Cá nhân…).
-   - Thêm node `Lists` và `listId` trong `Task`; màn hình chọn danh sách.
-   - Tham khảo: Todoist projects, Microsoft To Do lists.
-5. **Việc con (subtasks)** và tiến độ `2/5`.
-   - Node `Subtasks` hoặc mảng lồng trong `Task`; hiển thị thanh tiến độ trong thẻ.
-6. **Chỉnh sửa hồ sơ**: đổi tên hiển thị, ảnh đại diện, đổi mật khẩu.
-   - `FirebaseUser.updateProfile`, Firebase Storage cho ảnh.
-7. **Chế độ tối (Dark mode)** và tùy chọn cỡ chữ.
-   - Hiện app đang cố định giao diện sáng; có thể bổ sung `values-night/colors.xml` đầy đủ.
-8. **Lưu offline & đồng bộ khi có mạng**.
-   - `FirebaseDatabase.getInstance().setPersistenceEnabled(true)` + trạng thái đồng bộ.
-9. **Widget màn hình chính** (hôm nay / thêm việc nhanh).
-   - Glance (Compose) hoặc RemoteViews.
-10. **Xuất / sao lưu dữ liệu** (JSON, CSV, Markdown cho nhật ký).
+### P0 — Đã triển khai (nhánh `feature/ui-redesign`)
+1. ✅ **Công việc lặp lại** hằng ngày / tuần / tháng (`recurrence`, `nextSpawned`).
+   - Khi đánh dấu hoàn thành, `TaskAdapter` tự tạo bản ghi kỳ kế tiếp và đặt lại nhắc việc.
+2. ✅ **Nhiều lời nhắc cho một việc** (`reminderOffsets`: đúng giờ, trước 10 phút, 1 giờ, 1 ngày).
+   - `ReminderScheduler` đặt/hủy báo thức, `NotificationReceiver` hiển thị đúng mốc.
+3. ✅ **Tìm kiếm & lọc nâng cao** (`SearchFragment`): từ khóa, trạng thái, ưu tiên, khoảng ngày.
+4. ✅ **Danh sách / dự án** (`ListsFragment`, node `Lists`, `listId/listName/listColor` trong `Task`).
+   - Chip lọc danh sách ngay trên màn hình Công việc.
+5. ✅ **Việc con (subtasks)** và tiến độ `2/5`; chạm vào tiến độ để đánh dấu nhanh.
+   - Lưu dạng mảng `subtasks` trong `Task` để đơn giản hóa.
+6. ✅ **Chỉnh sửa hồ sơ** (`EditProfileFragment`): tên hiển thị, màu đại diện, đổi mật khẩu qua email.
+   - Lưu thêm node `Users/{uid}/displayName, avatarColor`.
+7. ✅ **Chế độ tối và cỡ chữ** (`SettingsFragment`, `Prefs`, `values-night`).
+   - Chọn Theo hệ thống / Sáng / Tối; cỡ chữ Nhỏ / Vừa / Lớn.
+8. ✅ **Lưu offline & đồng bộ** — bật Firebase persistence trong `App`.
+9. ✅ **Widget màn hình chính** (`TodayWidgetProvider`): tiến độ và 5 việc hôm nay.
+10. ✅ **Xuất / sao lưu dữ liệu** (`SettingsFragment`): JSON (công việc + nhật ký), CSV (công việc), Markdown.
+
+> Đã build thành công bằng `.\gradlew.bat assembleDebug --offline`. Chưa kiểm thử trực quan trên thiết bị thật do môi trường không có emulator.
 
 ### P1 — Nâng cấp trải nghiệm
 11. **Chế độ xem Tuần / Agenda** cho lịch, kéo-thả đổi ngày.
@@ -128,17 +125,17 @@ Tham khảo thêm:
 Tasks/{taskId}
   title, description, date, time, priority, icon, isCompleted,
   userId, timestamp,
-  listId?, recurrence?, reminders?, subtaskCount?
-
-Subtasks/{taskId}/{subtaskId}
-  title, isDone, order
+  listId?, listName?, listColor?,
+  recurrence ("none" | "daily" | "weekly" | "monthly"),
+  reminderOffsets: [0, 10, 60, 1440],   // phút trước giờ thực hiện
+  subtasks: [{ id, title, completed }],
+  nextSpawned: boolean                   // đã tạo kỳ lặp kế tiếp chưa
 
 Lists/{listId}
-  name, color, icon, ownerId, order
+  name, color, userId, timestamp
 
-Habits/{habitId}
-  name, icon, color, frequency, userId
-HabitLogs/{habitId}/{yyyy-MM-dd}: true
+Users/{uid}
+  displayName, avatarColor, email
 
 Diaries/{diaryId}
   title, content, date, timestamp, userId,

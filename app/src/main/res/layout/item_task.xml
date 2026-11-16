@@ -9,7 +9,7 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/white"
+    app:cardBackgroundColor="@color/colorCard"
     app:cardCornerRadius="18dp"
     app:cardElevation="0dp"
     app:strokeColor="@color/colorInputBorder"
@@ -25,7 +25,7 @@
             android:layout_width="6dp"
             android:layout_height="0dp"
             android:background="@drawable/bg_pill_medium"
-            app:layout_constraintBottom_toBottomOf="@+id/tv_task_desc"
+            app:layout_constraintBottom_toBottomOf="@+id/layout_task_badges"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/iv_task_icon" />
 
@@ -127,6 +127,78 @@
             app:layout_constraintEnd_toStartOf="@+id/cb_task_status"
             app:layout_constraintStart_toEndOf="@+id/iv_task_icon"
             app:layout_constraintTop_toBottomOf="@+id/layout_task_meta" />
+
+        <LinearLayout
+            android:id="@+id/layout_task_badges"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/cb_task_status"
+            app:layout_constraintStart_toEndOf="@+id/iv_task_icon"
+            app:layout_constraintTop_toBottomOf="@+id/tv_task_desc">
+
+            <TextView
+                android:id="@+id/tv_task_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_pill_neutral"
+                android:drawableStart="@drawable/ic_list"
+                android:drawablePadding="4dp"
+                android:drawableTint="@color/colorPrimary"
+                android:maxLines="1"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="Học tập"
+                android:textColor="@color/colorPrimary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layout_task_subtasks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:contentDescription="Việc con"
+                    android:src="@drawable/ic_subtask"
+                    app:tint="@color/colorTextSecondary" />
+
+                <TextView
+                    android:id="@+id/tv_task_subtasks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0/0"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/iv_task_recurrence"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:contentDescription="Công việc lặp lại"
+                android:src="@drawable/ic_repeat"
+                android:visibility="gone"
+                app:tint="@color/colorTextSecondary" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

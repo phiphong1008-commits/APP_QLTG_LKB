@@ -1,7 +1,9 @@
 package dpphong.ntu.appqlcv.ck; // Giữ nguyên package chuẩn của bạn
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -26,6 +28,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        float scale = Prefs.getFontScale(newBase);
+        Configuration configuration = new Configuration(newBase.getResources().getConfiguration());
+        configuration.fontScale = scale;
+        super.attachBaseContext(newBase.createConfigurationContext(configuration));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,8 +96,10 @@ public class MainActivity extends AppCompatActivity {
     private void setupSystemBars() {
         WindowInsetsControllerCompat controller =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        controller.setAppearanceLightStatusBars(true);
-        controller.setAppearanceLightNavigationBars(true);
+        int nightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        boolean isNight = nightMode == Configuration.UI_MODE_NIGHT_YES;
+        controller.setAppearanceLightStatusBars(!isNight);
+        controller.setAppearanceLightNavigationBars(!isNight);
 
         View container = findViewById(R.id.calendar_container);
         View bottomNav = findViewById(R.id.bottomNavigationView);
@@ -97,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(0, bars.top, 0, 0);
             return insets;
         });
-
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(0, 0, 0, bars.bottom);
