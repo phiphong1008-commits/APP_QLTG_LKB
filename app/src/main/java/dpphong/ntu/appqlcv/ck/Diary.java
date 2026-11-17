@@ -10,6 +10,13 @@ public class Diary implements Serializable {
     private long timestamp;
     private String userId;
 
+    // P1: nhật ký nâng cao
+    private String mood;
+    private String weather;
+    private String prompt;
+    private String photoBase64;
+    private boolean pinned;
+
     public Diary() {
         // Bắt buộc cho Firebase
     }
@@ -41,4 +48,19 @@ public class Diary implements Serializable {
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public String getMood() { return mood; }
+    public void setMood(String mood) { this.mood = mood; }
+
+    public String getWeather() { return weather; }
+    public void setWeather(String weather) { this.weather = weather; }
+
+    public String getPrompt() { return prompt; }
+    public void setPrompt(String prompt) { this.prompt = prompt; }
+
+    public String getPhotoBase64() { return photoBase64; }
+    public void setPhotoBase64(String photoBase64) { this.photoBase64 = photoBase64; }
+
+    public boolean isPinned() { return pinned; }
+    public void setPinned(boolean pinned) { this.pinned = pinned; }
 }

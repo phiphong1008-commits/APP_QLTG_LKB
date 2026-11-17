@@ -579,6 +579,96 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                app:cardBackgroundColor="@color/colorCard"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/colorInputBorder"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nhắc theo vị trí"
+                        android:textColor="@color/colorTextPrimary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Khi bạn ở gần địa điểm này, app sẽ nhắc bạn làm việc (bán kính khoảng 250 m)."
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_task_location"
+                            android:layout_width="0dp"
+                            android:layout_height="54dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_rounded_input"
+                            android:drawableStart="@drawable/ic_event"
+                            android:drawablePadding="8dp"
+                            android:drawableTint="@color/colorPrimary"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:paddingHorizontal="14dp"
+                            android:singleLine="true"
+                            android:text="Chưa chọn địa điểm"
+                            android:textColor="@color/colorTextHint"
+                            android:textSize="14sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_pick_location"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="50dp"
+                            android:layout_marginStart="8dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:text="Chọn"
+                            android:textAllCaps="false"
+                            android:textColor="@color/colorPrimary"
+                            app:backgroundTint="@color/colorPrimaryContainer"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/ic_share"
+                            app:iconSize="16dp"
+                            app:iconTint="@color/colorPrimary"
+                            app:strokeWidth="0dp" />
+
+                        <ImageButton
+                            android:id="@+id/btn_clear_location"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="4dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Bỏ địa điểm"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_delete"
+                            android:visibility="gone"
+                            app:tint="@color/colorTextHint" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save_task"
                 android:layout_width="match_parent"

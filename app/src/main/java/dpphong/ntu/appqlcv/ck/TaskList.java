@@ -11,6 +11,8 @@ public class TaskList implements Serializable {
     private String color;
     private String userId;
     private long timestamp;
+    /** Mã chia sẻ 6 ký tự (nếu danh sách đã được chia sẻ). */
+    private String shareCode;
 
     public TaskList() {
     }
@@ -61,5 +63,13 @@ public class TaskList implements Serializable {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getShareCode() {
+        return shareCode;
+    }
+
+    public void setShareCode(String shareCode) {
+        this.shareCode = shareCode;
     }
 }

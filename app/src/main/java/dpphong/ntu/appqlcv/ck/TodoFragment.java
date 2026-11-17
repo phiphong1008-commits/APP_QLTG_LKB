@@ -73,6 +73,10 @@ public class TodoFragment extends Fragment {
         TextView tvSubtitle = view.findViewById(R.id.tv_todo_subtitle);
         chipGroupLists = view.findViewById(R.id.chip_group_lists);
         ImageButton btnOpenSearch = view.findViewById(R.id.btn_open_search);
+        View btnQuickAdd = view.findViewById(R.id.btn_quick_add);
+
+        btnQuickAdd.setOnClickListener(v -> new QuickAddDialogFragment()
+                .show(getParentFragmentManager(), "quick_add"));
 
         // Ngày hôm nay hiển thị thân thiện
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd/MM", new Locale("vi", "VN"));

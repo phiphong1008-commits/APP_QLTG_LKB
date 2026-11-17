@@ -48,6 +48,15 @@
         </LinearLayout>
 
         <ImageButton
+            android:id="@+id/btn_import_list"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Nhập danh sách được chia sẻ"
+            android:src="@drawable/ic_download"
+            app:tint="@color/colorTextSecondary" />
+
+        <ImageButton
             android:id="@+id/btn_add_list"
             android:layout_width="48dp"
             android:layout_height="48dp"

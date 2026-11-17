@@ -1,5 +1,6 @@
 package dpphong.ntu.appqlcv.ck;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
@@ -16,9 +17,13 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.chip.Chip;
@@ -53,6 +58,14 @@ public class AddTodoFragment extends Fragment {
     private LinearLayout containerSubtasks;
     private MaterialAutoCompleteTextView actvTaskList;
     private ChipGroup chipGroupRecurrence, chipGroupReminders;
+    private TextView tvLocation;
+    private ImageButton btnClearLocation;
+    private ActivityResultLauncher<String> locationPermissionLauncher;
+
+    private String locationName;
+    private Double locationLat;
+    private Double locationLng;
+    private boolean askingLocationName;
 
     private final Calendar myCalendar = Calendar.getInstance();
 
@@ -65,6 +78,21 @@ public class AddTodoFragment extends Fragment {
     private TaskList selectedList = null;
 
     private final List<Subtask> subtasks = new ArrayList<>();
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        locationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        pickLocation();
+                    } else if (isAdded()) {
+                        Toast.makeText(getContext(), "Cần quyền vị trí để chọn địa điểm nhắc",
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
 
     @Nullable
     @Override
@@ -89,6 +117,19 @@ public class AddTodoFragment extends Fragment {
         actvTaskList = view.findViewById(R.id.actv_task_list);
         chipGroupRecurrence = view.findViewById(R.id.chip_group_recurrence);
         chipGroupReminders = view.findViewById(R.id.chip_group_reminders);
+        tvLocation = view.findViewById(R.id.tv_task_location);
+        btnClearLocation = view.findViewById(R.id.btn_clear_location);
+        com.google.android.material.button.MaterialButton btnPickLocation =
+                view.findViewById(R.id.btn_pick_location);
+
+        btnPickLocation.setOnClickListener(v -> {
+            if (LocationHelper.hasPermission(requireContext())) {
+                pickLocation();
+            } else {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+        });
+        btnClearLocation.setOnClickListener(v -> clearLocation());
 
         tvDate.setOnClickListener(v -> showDatePicker());
         tvTime.setOnClickListener(v -> showTimePicker());
@@ -166,6 +207,12 @@ public class AddTodoFragment extends Fragment {
 
                 // Các mốc nhắc
                 renderReminderSelection(taskToEdit.getReminderOffsets());
+
+                // Vị trí nhắc việc
+                locationName = taskToEdit.getLocationName();
+                locationLat = taskToEdit.getLocationLat();
+                locationLng = taskToEdit.getLocationLng();
+                updateLocationUi();
             }
         } else {
             tvHeaderTitle.setText("Tạo Công Việc");
@@ -378,6 +425,89 @@ public class AddTodoFragment extends Fragment {
     }
 
     // ==========================================
+    // NHẮC THEO VỊ TRÍ
+    // ==========================================
+    private void pickLocation() {
+        Toast.makeText(getContext(), "Đang lấy vị trí hiện tại...", Toast.LENGTH_SHORT).show();
+
+        LocationHelper.requestSingleUpdate(requireActivity(), new LocationHelper.LocationCallback() {
+            @Override
+            public void onLocation(double lat, double lng) {
+                if (!isAdded()) return;
+                locationLat = lat;
+                locationLng = lng;
+                updateLocationUi();
+
+                if (!askingLocationName) {
+                    askingLocationName = true;
+                    askLocationName();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    private void askLocationName() {
+        final EditText input = new EditText(requireContext());
+        input.setHint("Tên địa điểm");
+        input.setText(locationName != null ? locationName : "Địa điểm của tôi");
+        input.setSelection(input.getText().length());
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding, padding, padding);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Đặt tên địa điểm")
+                .setMessage("Bạn sẽ được nhắc khi ở gần địa điểm này.")
+                .setView(input)
+                .setPositiveButton("Lưu", (dialog, which) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = "Địa điểm đã chọn";
+                    locationName = name;
+                    updateLocationUi();
+                })
+                .setNegativeButton("Bỏ qua", (dialog, which) -> {
+                    if (locationName == null) locationName = "Địa điểm đã chọn";
+                    updateLocationUi();
+                })
+                .setOnDismissListener(dialog -> askingLocationName = false)
+                .show();
+    }
+
+    private void clearLocation() {
+        locationName = null;
+        locationLat = null;
+        locationLng = null;
+        updateLocationUi();
+    }
+
+    private void updateLocationUi() {
+        if (!isAdded() || tvLocation == null) return;
+
+        boolean hasLocation = locationName != null || locationLat != null;
+        if (hasLocation) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(locationName != null ? locationName : "Địa điểm đã chọn");
+            if (locationLat != null && locationLng != null) {
+                builder.append(String.format(Locale.getDefault(), " • %.5f, %.5f",
+                        locationLat, locationLng));
+            }
+            tvLocation.setText(builder.toString());
+            tvLocation.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorPrimary));
+            btnClearLocation.setVisibility(View.VISIBLE);
+        } else {
+            tvLocation.setText("Chưa chọn địa điểm");
+            tvLocation.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorTextHint));
+            btnClearLocation.setVisibility(View.GONE);
+        }
+    }
+
+    // ==========================================
     // CHỌN NGÀY / GIỜ
     // ==========================================
     private void showAlertDialog(String title, String message) {
@@ -479,6 +609,9 @@ public class AddTodoFragment extends Fragment {
             updateMap.put("recurrence", recurrence);
             updateMap.put("reminderOffsets", reminderOffsets);
             updateMap.put("subtasks", subtasks);
+            updateMap.put("locationName", locationName);
+            updateMap.put("locationLat", locationLat);
+            updateMap.put("locationLng", locationLng);
 
             mDatabase.child("Tasks").child(taskToEdit.getId()).updateChildren(updateMap)
                     .addOnSuccessListener(aVoid -> {
@@ -508,6 +641,9 @@ public class AddTodoFragment extends Fragment {
             taskMap.put("reminderOffsets", reminderOffsets);
             taskMap.put("subtasks", subtasks);
             taskMap.put("nextSpawned", false);
+            taskMap.put("locationName", locationName);
+            taskMap.put("locationLat", locationLat);
+            taskMap.put("locationLng", locationLng);
 
             if (taskId != null) {
                 mDatabase.child("Tasks").child(taskId).setValue(taskMap)

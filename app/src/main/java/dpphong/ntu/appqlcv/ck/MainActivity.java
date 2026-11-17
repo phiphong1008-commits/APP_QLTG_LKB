@@ -89,6 +89,13 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Kiểm tra nhắc theo vị trí mỗi lần quay lại app (không cần Geofencing).
+        LocationHelper.checkNearbyTasks(this);
+    }
+
     /**
      * Xử lý tràn viền: đẩy nội dung xuống dưới thanh trạng thái và
      * chừa khoảng trống cho thanh điều hướng hệ thống.

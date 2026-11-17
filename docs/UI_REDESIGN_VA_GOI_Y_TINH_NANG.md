@@ -1,6 +1,6 @@
 # Thiết kế lại giao diện & gợi ý tính năng
 
-> Nhánh: `feature/ui-redesign`  
+> Nhánh: `feature/ui-redesign` (P0) → `feature/p1-p2` (P1 + P2)  
 > Ứng dụng: APP_QLTG - Quản lý thời gian, công việc và nhật ký (Android + Firebase)
 
 ---
@@ -64,7 +64,7 @@ Tham khảo thêm:
 
 ---
 
-## 3. Danh sách tính năng có thể bổ sung
+## 3. Danh sách tính năng &amp; trạng thái triển khai
 
 ### P0 — Đã triển khai (nhánh `feature/ui-redesign`)
 1. ✅ **Công việc lặp lại** hằng ngày / tuần / tháng (`recurrence`, `nextSpawned`).
@@ -86,40 +86,69 @@ Tham khảo thêm:
 
 > Đã build thành công bằng `.\gradlew.bat assembleDebug --offline`. Chưa kiểm thử trực quan trên thiết bị thật do môi trường không có emulator.
 
-### P1 — Nâng cấp trải nghiệm
-11. **Chế độ xem Tuần / Agenda** cho lịch, kéo-thả đổi ngày.
-    - Tham khảo: TickTick, Notion Calendar.
-12. **Quick Add bằng ngôn ngữ tự nhiên**: "Họp nhóm 9h mai #work !cao".
-    - Parse chuỗi + preview trước khi lưu.
-13. **Pomodoro / chế độ tập trung** gắn với công việc.
-    - TickTick, Forest.
-14. **Thói quen (habit tracker)** và streak.
-    - Thêm node `Habits`, `HabitLogs`; biểu đồ 7 ngày.
-15. **Thống kê & biểu đồ**: việc hoàn thành theo tuần, tỉ lệ đúng hạn, thời gian tập trung.
-    - MPAndroidChart hoặc biểu đồ tự vẽ.
-16. **Nhật ký nâng cao**: cảm xúc (mood), ảnh, thời tiết, prompt gợi ý mỗi ngày.
-    - Day One, Journey.
-17. **Khóa nhật ký bằng PIN / vân tay**.
-    - Android BiometricPrompt.
-18. **Tìm kiếm nhật ký, ghim bài, lịch sử theo tháng**.
-19. **Nhắc theo vị trí** (đến trường/công ty thì nhắc việc).
-    - Geofencing API.
-20. **Chia sẻ danh sách / cộng tác**.
-    - Thêm `members`, quyền truy cập trên Firebase Rules.
+### P1 — Nâng cấp trải nghiệm (✅ đã triển khai trên `feature/p1-p2`)
+11. ✅ **Chế độ xem Tuần / Agenda** — `WeekFragment` + `fragment_week.xml`.
+    - 7 ô ngày trong tuần, chấm đánh dấu ngày có việc, chuyển tuần trước/sau, chạm một ngày để xem danh sách công việc, FAB thêm việc đúng ngày đang chọn.
+    - Đổi ngày: **nhấn giữ công việc → “Dời sang ngày khác”** rồi chọn ngày bằng date picker (chưa phải kéo–thả trực tiếp).
+12. ✅ **Quick Add bằng ngôn ngữ tự nhiên** — `QuickAddParser`, `QuickAddDialogFragment`.
+    - Hiểu giờ (`9h`, `9:30`, `21g`), ngày (`hôm nay`, `mai`, `ngày kia`, `thứ 2…CN`, `dd/MM`), ưu tiên (`!cao`, `!vừa`, `!thấp`, `P1…P3`) và danh sách (`#tên`).
+    - Hiển thị bản xem trước trước khi lưu; có nút micro nhập bằng giọng nói.
+13. ✅ **Pomodoro / chế độ tập trung** — `FocusFragment`, node `FocusSessions`.
+    - Chọn 15/25/45/60 phút, đếm ngược, bắt đầu/tạm dừng/đặt lại, lưu phiên khi hoàn tất, danh sách phiên gần đây và tổng phút hôm nay.
+    - Mở từ công cụ, hoặc từ menu thao tác của công việc (“Tập trung”).
+14. ✅ **Thói quen & streak** — `HabitsFragment`, `HabitAdapter`, node `Habits` + `HabitLogs`.
+    - Thêm thói quen (tên, icon, số ngày mục tiêu/tuần), đánh dấu hoàn thành theo từng ngày, hiển thị chuỗi ngày liên tiếp và 7 chấm tuần.
+15. ✅ **Thống kê & biểu đồ** — `StatsFragment` + `BarChartView` tự vẽ (không thêm thư viện).
+    - Tỉ lệ hoàn thành, biểu đồ 7 ngày, thanh theo mức ưu tiên, phút tập trung hôm nay, thói quen hôm nay, số bài nhật ký, tiến độ theo từng danh sách.
+16. ✅ **Nhật ký nâng cao** — `AddDiaryFragment`, `fragment_diary.xml`, model `Diary`.
+    - Chip cảm xúc (vui/bình thường/buồn/tức giận/mệt), thời tiết (nắng/mây/mưa/lạnh), prompt gợi ý, chọn ảnh (thu nhỏ và lưu base64 trong `photoBase64`), xem/xóa ảnh.
+17. ✅ **Khóa nhật ký bằng PIN** — `Prefs`, `fragment_settings.xml`, `DiaryFragment`.
+    - Đặt/đổi/tắt PIN 4–6 số trong Cài đặt; màn hình nhật ký hiện lớp khóa, nhập PIN mới xem được; có nút khóa nhanh.
+    - Chưa dùng vân tay/BiometricPrompt (PIN lưu cục bộ trên thiết bị).
+18. ✅ **Tìm kiếm nhật ký, ghim bài, lịch sử theo tháng** — `DiaryFragment`, `DiaryAdapter`.
+    - Tìm theo tiêu đề/nội dung, lọc Tất cả / Tháng này / Tháng trước, ghim lên đầu, menu nhấn giữ để ghim hoặc xóa.
+19. ✅ **Nhắc theo vị trí** — `LocationHelper`, thẻ “Nhắc theo vị trí” trong `fragment_add_todo.xml`.
+    - Lưu tên + tọa độ vào công việc; khi mở app, kiểm tra khoảng cách (bán kính 250 m) và gửi thông báo, mỗi việc tối đa một lần/ngày.
+    - Chỉ kiểm tra khi app được mở (`MainActivity.onResume`), không chạy nền/geofencing.
+20. ✅ **Chia sẻ danh sách** — `ListsFragment`, `ListAdapter`, node `SharedLists`.
+    - Tạo mã chia sẻ 6 ký tự, chụp nội dung danh sách + công việc lên `SharedLists/{code}`; người nhận nhập mã để **sao chép** danh sách về tài khoản.
+    - Là bản sao tại thời điểm chia sẻ, chưa phải cộng tác trực tiếp/thời gian thực.
 
-### P2 — Khác biệt hóa
-21. **Trợ lý AI**: gợi ý lịch trình trong ngày, tóm tắt nhật ký, chia nhỏ việc lớn.
-22. **Nhập bằng giọng nói**.
-23. **Mẫu công việc / mẫu nhật ký**.
-24. **Ma trận Eisenhower** (quan trọng – khẩn cấp).
-25. **Tích hợp Google Calendar** (hai chiều) và Google Tasks.
-26. **Thành tích / gamification** (huy hiệu, chuỗi ngày, cấp độ).
-27. **Chế độ gia đình / nhóm** với bảng tin.
-28. **Theo dõi thời gian thực tế** so với kế hoạch.
+### P2 — Khác biệt hóa (✅ đã triển khai trên `feature/p1-p2`)
+21. ✅ **Trợ lý AI (cục bộ)** — `AssistantFragment`.
+    - Tổng hợp công việc hôm nay, việc quá hạn, phút tập trung, thói quen và nhật ký để đưa ra gợi ý; chọn giọng điệu (thân thiện / ngắn gọn / động viên) lưu trong `Prefs`; có lối tắt thêm việc nhanh.
+    - Dùng luật cục bộ, không gọi dịch vụ AI/LLM bên ngoài.
+22. ✅ **Nhập bằng giọng nói** — `RecognizerIntent` trong `QuickAddDialogFragment` (nút micro).
+23. ✅ **Mẫu công việc** — `TemplatesFragment`, `TemplateAdapter`, node `Templates`.
+    - Lưu công việc hiện tại thành mẫu từ menu thao tác, áp dụng mẫu để tạo việc mới, xóa mẫu.
+24. ✅ **Ma trận Eisenhower** — `MatrixFragment`, `fragment_matrix.xml`.
+    - 4 góc phần tư; nhấn giữ công việc để đổi mức ưu tiên tương ứng.
+25. ✅ **Tích hợp Google Calendar (một chiều)** — `CalendarHelper`.
+    - Từ menu công việc chọn “Thêm vào Google Calendar”, mở màn hình chèn sự kiện của `CalendarContract` (cần app Google Calendar trên máy).
+    - Chưa đồng bộ hai chiều/đọc sự kiện từ Google.
+26. ✅ **Thành tích / gamification** — `AchievementsFragment`.
+    - 10 huy hiệu dựa trên số việc hoàn thành, phút tập trung, chuỗi thói quen, số bài nhật ký.
+27. ✅ **Nhóm / gia đình** — `GroupsFragment`, node `Groups`, `Users/{uid}/groups`.
+    - Tạo nhóm (mã 6 ký tự) hoặc tham gia bằng mã, xem danh sách thành viên, chia sẻ mã mời, rời nhóm.
+    - Hiện là danh sách thành viên + mã mời; chưa có bảng tin hay bảng công việc chung.
+28. ✅ **Theo dõi thời gian (một phần)** — mỗi phiên tập trung lưu `minutes`, `taskId`, `taskTitle`, `startedAt`.
+    - Thống kê tổng phút tập trung theo ngày; chưa có báo cáo so sánh thời gian thực tế với kế hoạch.
+
+> Đã build thành công bằng `.\gradlew.bat assembleDebug --offline`. Chưa kiểm thử trực quan trên thiết bị thật do môi trường không có emulator.
+
+### Điểm vào các tính năng mới
+| Khu vực | Điểm vào |
+| --- | --- |
+| Tài khoản | Nút **Công cụ** → `ToolsFragment` (Lịch tuần, Thêm nhanh, Tập trung, Thói quen, Thống kê, Ma trận, Mẫu, Thành tích, Trợ lý AI, Nhóm) |
+| Lịch | Nút **Lịch tuần** trên màn hình Lịch |
+| Công việc | Nút **Thêm nhanh** trên màn hình Công việc; nhấn giữ một công việc để mở menu thao tác |
+| Cài đặt | Thẻ **Khóa nhật ký** |
+| Danh sách | Nút **chia sẻ** trên từng danh sách, nút **tải xuống** để nhập mã chia sẻ |
+| Thêm/sửa công việc | Thẻ **Nhắc theo vị trí** |
 
 ---
 
-## 4. Gợi ý mô hình dữ liệu Firebase
+## 4. Mô hình dữ liệu Firebase (đã dùng)
 
 ```text
 Tasks/{taskId}
@@ -129,27 +158,76 @@ Tasks/{taskId}
   recurrence ("none" | "daily" | "weekly" | "monthly"),
   reminderOffsets: [0, 10, 60, 1440],   // phút trước giờ thực hiện
   subtasks: [{ id, title, completed }],
-  nextSpawned: boolean                   // đã tạo kỳ lặp kế tiếp chưa
+  nextSpawned: boolean,                  // đã tạo kỳ lặp kế tiếp chưa
+  locationName?, locationLat?, locationLng?,
+  completedAt                              // thời điểm hoàn thành (millis)
 
 Lists/{listId}
-  name, color, userId, timestamp
+  name, color, userId, timestamp, shareCode?
 
 Users/{uid}
   displayName, avatarColor, email
+  groups: { groupCode: true }             // các nhóm đã tham gia
 
 Diaries/{diaryId}
   title, content, date, timestamp, userId,
-  mood?, photos?, isPinned?
+  mood ("happy" | "ok" | "sad" | "angry" | "tired"),
+  weather ("sun" | "cloud" | "rain" | "cold"),
+  prompt?, photoBase64?, pinned: boolean
+
+Habits/{habitId}
+  name, icon, targetPerWeek, userId, timestamp
+
+HabitLogs/{habitId}/{yyyy-MM-dd}: true
+
+FocusSessions/{sessionId}
+  userId, taskId?, taskTitle?, minutes, startedAt, createdAt
+
+Templates/{templateId}
+  title, description, priority, icon, recurrence, userId, timestamp
+
+Groups/{groupCode}
+  code, name, ownerId, createdAt
+  members: { uid: { name, email, joinedAt } }
+
+SharedLists/{shareCode}
+  code, name, color, ownerId, createdAt, taskCount,
+  tasks: { taskId: { title, description, date, time, priority, icon, recurrence } }
+
+// Dữ liệu cục bộ (không lên Firebase)
+SharedPreferences "app_settings": night_mode, font_scale, diary_pin, ai_tone
+SharedPreferences "location_reminders": { taskId: "yyyy-MM-dd" }  // chống nhắc lặp trong ngày
 ```
 
-> Lưu ý: cập nhật Firebase Rules tương ứng khi thêm node mới.
+> Lưu ý: cập nhật Firebase Rules tương ứng khi thêm node mới (`Habits`, `HabitLogs`, `FocusSessions`, `Templates`, `Groups`, `SharedLists`). Riêng `SharedLists` cần cho phép đọc theo mã chia sẻ.
 
 ---
 
-## 5. Thứ tự triển khai đề xuất
+## 5. Trạng thái triển khai & hạn chế đã biết
 
-1. P0: lặp lại + nhắc việc + tìm kiếm + danh sách/dự án + dark mode.
-2. P1: chế độ tuần, quick add, thống kê, mood nhật ký.
-3. P2: AI, tích hợp lịch, cộng tác.
+### Đã xong
+1. P0 trên `feature/ui-redesign` (commit `72c6b27`): giao diện mới + 10 tính năng P0.
+2. P1 (11–20) và P2 (21–28) trên `feature/p1-p2`: toàn bộ mục nêu trên đã có màn hình và luồng dữ liệu Firebase.
+3. Kiểm tra build: `.\gradlew.bat assembleDebug --offline` thành công, APK tại
+   `app\build\outputs\apk\debug\app-debug.apk`.
 
-Mỗi bước nên làm theo hướng: cập nhật model → repository/query → UI → kiểm thử trên thiết bị thật.
+### Hạn chế
+- **Chưa kiểm thử runtime**: môi trường không có emulator/thiết bị, mới xác nhận biên dịch.
+- **Khóa nhật ký**: chỉ PIN cục bộ, chưa có vân tay/sinh trắc học; PIN lưu dạng văn bản trong SharedPreferences của app.
+- **Nhắc theo vị trí**: chỉ kiểm tra khi mở app, không có geofencing chạy nền; bán kính cố định 250 m.
+- **Chia sẻ danh sách**: là bản sao (snapshot) tại thời điểm chia sẻ, không đồng bộ trực tiếp; chưa phân quyền thành viên.
+- **Google Calendar**: chỉ thêm sự kiện một chiều qua Intent, không đọc/đồng bộ ngược.
+- **AI assistant**: dựa trên luật cục bộ, không phải mô hình ngôn ngữ.
+- **Kéo–thả đổi ngày**: thay bằng thao tác nhấn giữ → chọn ngày.
+- **Nhóm/gia đình**: mới có mã mời + danh sách thành viên, chưa có bảng tin/bảng việc chung.
+- **Theo dõi thời gian**: mới có phút tập trung, chưa so sánh kế hoạch với thực tế.
+
+---
+
+## 6. Hướng phát triển tiếp
+1. Kéo–thả thật trên chế độ Tuần và đồng bộ hai chiều với Google Calendar.
+2. Geofencing chạy nền (WorkManager + Play Services) cho nhắc theo vị trí.
+3. Cộng tác thời gian thực cho danh sách/nhóm (Firebase Rules + listener theo thành viên).
+4. Sinh trắc học cho khóa nhật ký và mã hóa PIN.
+5. Báo cáo so sánh thời gian kế hoạch – thực tế, xuất báo cáo tuần/tháng.
+

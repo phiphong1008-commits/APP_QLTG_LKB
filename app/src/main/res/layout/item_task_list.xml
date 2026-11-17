@@ -55,6 +55,16 @@
         </LinearLayout>
 
         <ImageButton
+            android:id="@+id/btn_share_list"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Chia sẻ danh sách"
+            android:padding="9dp"
+            android:src="@drawable/ic_share"
+            app:tint="@color/colorTextHint" />
+
+        <ImageButton
             android:id="@+id/btn_edit_list"
             android:layout_width="40dp"
             android:layout_height="40dp"

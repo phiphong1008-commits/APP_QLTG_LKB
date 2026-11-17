@@ -2,22 +2,29 @@ package dpphong.ntu.appqlcv.ck;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -41,6 +48,8 @@ public class SettingsFragment extends Fragment {
 
     private ChipGroup chipTheme, chipFont;
     private ActivityResultLauncher<String> jsonLauncher, csvLauncher, markdownLauncher;
+    private TextView tvDiaryLockStatus;
+    private MaterialButton btnDiaryLock, btnDiaryRemovePin;
 
     @Nullable
     @Override
@@ -54,6 +63,9 @@ public class SettingsFragment extends Fragment {
         MaterialButton btnJson = view.findViewById(R.id.btn_export_json);
         MaterialButton btnCsv = view.findViewById(R.id.btn_export_csv);
         MaterialButton btnMarkdown = view.findViewById(R.id.btn_export_markdown);
+        tvDiaryLockStatus = view.findViewById(R.id.tv_diary_lock_status);
+        btnDiaryLock = view.findViewById(R.id.btn_diary_lock);
+        btnDiaryRemovePin = view.findViewById(R.id.btn_diary_remove_pin);
 
         btnBack.setOnClickListener(v -> {
             if (getParentFragmentManager().getBackStackEntryCount() > 0) {
@@ -87,7 +99,132 @@ public class SettingsFragment extends Fragment {
         btnCsv.setOnClickListener(v -> csvLauncher.launch(buildFileName("csv")));
         btnMarkdown.setOnClickListener(v -> markdownLauncher.launch(buildFileName("md")));
 
+        btnDiaryLock.setOnClickListener(v -> showSetPinDialog());
+        btnDiaryRemovePin.setOnClickListener(v -> showRemovePinDialog());
+        updateDiaryLockUi();
+
         return view;
+    }
+
+    // ==========================================
+    // KHÓA NHẬT KÝ BẰNG PIN
+    // ==========================================
+    private void updateDiaryLockUi() {
+        if (!isAdded() || tvDiaryLockStatus == null) return;
+
+        boolean hasPin = Prefs.hasDiaryPin(requireContext());
+        if (hasPin) {
+            tvDiaryLockStatus.setText("🔒 Đang bật khóa • Nhật ký yêu cầu mã PIN khi mở");
+            tvDiaryLockStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorSuccess));
+            btnDiaryLock.setText("Đổi mã PIN");
+            btnDiaryRemovePin.setVisibility(View.VISIBLE);
+        } else {
+            tvDiaryLockStatus.setText("🔓 Chưa bật khóa nhật ký");
+            tvDiaryLockStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorTextSecondary));
+            btnDiaryLock.setText("Bật khóa nhật ký");
+            btnDiaryRemovePin.setVisibility(View.GONE);
+        }
+    }
+
+    private void showSetPinDialog() {
+        boolean hasPin = Prefs.hasDiaryPin(requireContext());
+        int padding = dp(20);
+
+        LinearLayout container = new LinearLayout(requireContext());
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(padding, dp(4), padding, 0);
+
+        final EditText currentInput = hasPin ? makePinInput("Mã PIN hiện tại") : null;
+        final EditText newInput = makePinInput("Mã PIN mới (4-6 chữ số)");
+        final EditText confirmInput = makePinInput("Nhập lại mã PIN mới");
+
+        if (currentInput != null) container.addView(currentInput);
+        container.addView(newInput);
+        container.addView(confirmInput);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(hasPin ? "Đổi mã PIN nhật ký" : "Bật khóa nhật ký")
+                .setIcon(R.drawable.ic_lock)
+                .setView(container)
+                .setPositiveButton("Lưu", null)
+                .setNegativeButton("Hủy", null)
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    if (currentInput != null) {
+                        String current = currentInput.getText().toString().trim();
+                        if (!Prefs.checkDiaryPin(requireContext(), current)) {
+                            currentInput.setError("Mã PIN hiện tại không đúng");
+                            return;
+                        }
+                    }
+
+                    String pin = newInput.getText().toString().trim();
+                    String confirm = confirmInput.getText().toString().trim();
+                    if (!pin.matches("\\d{4,6}")) {
+                        newInput.setError("Mã PIN gồm 4-6 chữ số");
+                        return;
+                    }
+                    if (!pin.equals(confirm)) {
+                        confirmInput.setError("Mã nhập lại không khớp");
+                        return;
+                    }
+
+                    Prefs.setDiaryPin(requireContext(), pin);
+                    updateDiaryLockUi();
+                    Toast.makeText(getContext(), "Đã bật khóa nhật ký",
+                            Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }));
+        dialog.show();
+    }
+
+    private void showRemovePinDialog() {
+        final EditText input = makePinInput("Nhập mã PIN hiện tại");
+
+        LinearLayout container = new LinearLayout(requireContext());
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(dp(20), dp(4), dp(20), 0);
+        container.addView(input);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Tắt khóa nhật ký")
+                .setIcon(R.drawable.ic_lock)
+                .setView(container)
+                .setPositiveButton("Tắt khóa", null)
+                .setNegativeButton("Hủy", null)
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String pin = input.getText().toString().trim();
+                    if (!Prefs.checkDiaryPin(requireContext(), pin)) {
+                        input.setError("Mã PIN không đúng");
+                        return;
+                    }
+                    Prefs.clearDiaryPin(requireContext());
+                    updateDiaryLockUi();
+                    Toast.makeText(getContext(), "Đã tắt khóa nhật ký",
+                            Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }));
+        dialog.show();
+    }
+
+    private EditText makePinInput(String hint) {
+        EditText input = new EditText(requireContext());
+        input.setHint(hint);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(10);
+        input.setLayoutParams(params);
+        return input;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void setupExportLaunchers() {

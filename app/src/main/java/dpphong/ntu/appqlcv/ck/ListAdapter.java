@@ -24,6 +24,8 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
         void onEdit(TaskList taskList);
 
         void onDelete(TaskList taskList);
+
+        void onShare(TaskList taskList);
     }
 
     private final List<TaskList> lists;
@@ -70,6 +72,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
 
         holder.itemView.setOnClickListener(v -> listener.onEdit(taskList));
         holder.btnEdit.setOnClickListener(v -> listener.onEdit(taskList));
+        holder.btnShare.setOnClickListener(v -> listener.onShare(taskList));
         holder.btnDelete.setOnClickListener(v -> listener.onDelete(taskList));
     }
 
@@ -81,7 +84,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
     public static class ListViewHolder extends RecyclerView.ViewHolder {
         View viewColor;
         TextView tvName, tvCount;
-        ImageButton btnEdit, btnDelete;
+        ImageButton btnEdit, btnDelete, btnShare;
 
         public ListViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,6 +93,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
             tvCount = itemView.findViewById(R.id.tv_list_count);
             btnEdit = itemView.findViewById(R.id.btn_edit_list);
             btnDelete = itemView.findViewById(R.id.btn_delete_list);
+            btnShare = itemView.findViewById(R.id.btn_share_list);
         }
     }
 }

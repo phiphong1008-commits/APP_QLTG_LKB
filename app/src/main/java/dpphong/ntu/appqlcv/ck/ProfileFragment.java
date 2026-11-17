@@ -69,6 +69,12 @@ public class ProfileFragment extends Fragment {
                         .addToBackStack(null)
                         .commit());
 
+        view.findViewById(R.id.btn_tools).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new ToolsFragment())
+                        .addToBackStack(null)
+                        .commit());
+
         view.findViewById(R.id.btn_settings).setOnClickListener(v ->
                 getParentFragmentManager().beginTransaction()
                         .replace(R.id.calendar_container, new SettingsFragment())

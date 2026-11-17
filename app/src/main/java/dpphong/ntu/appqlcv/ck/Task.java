@@ -26,6 +26,12 @@ public class Task implements Serializable {
     private List<Subtask> subtasks;
     private boolean nextSpawned;
 
+    // P1/P2: vị trí, thời điểm hoàn thành
+    private String locationName;
+    private Double locationLat;
+    private Double locationLng;
+    private long completedAt;
+
     // BẮT BUỘC: Constructor rỗng dành cho Firebase
     public Task() {
     }
@@ -93,6 +99,18 @@ public class Task implements Serializable {
 
     public boolean isNextSpawned() { return nextSpawned; }
     public void setNextSpawned(boolean nextSpawned) { this.nextSpawned = nextSpawned; }
+
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
+
+    public Double getLocationLat() { return locationLat; }
+    public void setLocationLat(Double locationLat) { this.locationLat = locationLat; }
+
+    public Double getLocationLng() { return locationLng; }
+    public void setLocationLng(Double locationLng) { this.locationLng = locationLng; }
+
+    public long getCompletedAt() { return completedAt; }
+    public void setCompletedAt(long completedAt) { this.completedAt = completedAt; }
 
     @PropertyName("isCompleted")
     public boolean isCompleted() {

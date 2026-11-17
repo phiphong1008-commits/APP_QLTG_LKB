@@ -30,6 +30,24 @@
         app:layout_constraintTop_toBottomOf="@+id/tv_header_title" />
 
     <TextView
+        android:id="@+id/btn_week"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_pill_soft"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="8dp"
+        android:text="Tuần"
+        android:textColor="@color/colorPrimary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_today"
+        app:layout_constraintEnd_toStartOf="@+id/btn_today"
+        app:layout_constraintTop_toTopOf="@+id/btn_today" />
+
+    <TextView
         android:id="@+id/btn_today"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

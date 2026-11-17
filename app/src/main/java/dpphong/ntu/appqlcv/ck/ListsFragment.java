@@ -1,10 +1,13 @@
 package dpphong.ntu.appqlcv.ck;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -29,7 +32,9 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 public class ListsFragment extends Fragment {
 
@@ -56,6 +61,7 @@ public class ListsFragment extends Fragment {
         layoutEmpty = view.findViewById(R.id.layout_empty_lists);
         ImageButton btnBack = view.findViewById(R.id.btn_back_lists);
         ImageButton btnAdd = view.findViewById(R.id.btn_add_list);
+        ImageButton btnImport = view.findViewById(R.id.btn_import_list);
 
         adapter = new ListAdapter(lists, new ListAdapter.Listener() {
             @Override
@@ -66,6 +72,11 @@ public class ListsFragment extends Fragment {
             @Override
             public void onDelete(TaskList taskList) {
                 confirmDelete(taskList);
+            }
+
+            @Override
+            public void onShare(TaskList taskList) {
+                shareList(taskList);
             }
         });
 
@@ -80,6 +91,7 @@ public class ListsFragment extends Fragment {
             }
         });
         btnAdd.setOnClickListener(v -> showListDialog(null));
+        btnImport.setOnClickListener(v -> showImportDialog());
 
         loadLists();
         loadTaskCounts();
@@ -294,5 +306,181 @@ public class ListsFragment extends Fragment {
                     public void onCancelled(@NonNull DatabaseError error) {
                     }
                 });
+    }
+
+    // ==========================================
+    // CHIA SẺ / NHẬP DANH SÁCH
+    // ==========================================
+    private void shareList(TaskList taskList) {
+        if (userId == null || taskList == null || taskList.getId() == null) return;
+
+        final String shareCode = !TextUtils.isEmpty(taskList.getShareCode())
+                ? taskList.getShareCode()
+                : generateCode();
+
+        if (TextUtils.isEmpty(taskList.getShareCode())) {
+            taskList.setShareCode(shareCode);
+            database.child("Lists").child(taskList.getId()).child("shareCode").setValue(shareCode);
+        }
+
+        database.child("Tasks").orderByChild("userId").equalTo(userId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Map<String, Object> taskMaps = new HashMap<>();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            Task task = child.getValue(Task.class);
+                            if (task == null) continue;
+                            if (!taskList.getId().equals(task.getListId())) continue;
+
+                            Map<String, Object> item = new HashMap<>();
+                            item.put("title", safe(task.getTitle()));
+                            item.put("description", safe(task.getDescription()));
+                            item.put("date", safe(task.getDate()));
+                            item.put("time", safe(task.getTime()));
+                            item.put("priority", task.getPriority() != null ? task.getPriority() : "Vừa");
+                            item.put("icon", task.getIcon() != null ? task.getIcon() : "work");
+                            item.put("recurrence", task.getRecurrence() != null ? task.getRecurrence() : "none");
+                            taskMaps.put(child.getKey(), item);
+                        }
+
+                        Map<String, Object> shared = new HashMap<>();
+                        shared.put("code", shareCode);
+                        shared.put("name", safe(taskList.getName()));
+                        shared.put("color", safe(taskList.getColor()));
+                        shared.put("ownerId", userId);
+                        shared.put("createdAt", System.currentTimeMillis());
+                        shared.put("taskCount", taskMaps.size());
+                        shared.put("tasks", taskMaps);
+
+                        database.child("SharedLists").child(shareCode)
+                                .setValue(shared)
+                                .addOnSuccessListener(aVoid -> showShareSheet(taskList.getName(),
+                                        shareCode, taskMaps.size()))
+                                .addOnFailureListener(e -> Toast.makeText(getContext(),
+                                        "Không chia sẻ được: " + e.getMessage(),
+                                        Toast.LENGTH_LONG).show());
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(getContext(), "Không đọc được công việc để chia sẻ",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void showShareSheet(String name, String code, int taskCount) {
+        if (!isAdded()) return;
+
+        String text = "Mời bạn dùng danh sách \"" + (name != null ? name : "Danh sách") + "\" trên APP_QLTG.\n"
+                + "Mã chia sẻ: " + code + " • " + taskCount + " công việc\n"
+                + "Mở app → Công việc → Danh sách → nhấn biểu tượng tải xuống → nhập mã này.";
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        startActivity(Intent.createChooser(intent, "Chia sẻ danh sách"));
+    }
+
+    private void showImportDialog() {
+        if (!isAdded()) return;
+
+        final EditText input = new EditText(requireContext());
+        input.setHint("Nhập mã chia sẻ (6 ký tự)");
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding, padding, padding);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Nhập danh sách được chia sẻ")
+                .setIcon(R.drawable.ic_download)
+                .setMessage("Nhập mã chia sẻ để sao chép danh sách và công việc vào tài khoản của bạn.")
+                .setView(input)
+                .setPositiveButton("Nhập", (dialog, which) -> {
+                    String code = input.getText().toString().trim().toUpperCase(Locale.getDefault());
+                    if (code.length() < 4) {
+                        Toast.makeText(getContext(), "Mã chia sẻ không hợp lệ",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    importList(code);
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void importList(String code) {
+        if (userId == null) return;
+
+        database.child("SharedLists").child(code)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!snapshot.exists()) {
+                            Toast.makeText(getContext(), "Không tìm thấy danh sách với mã này",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        String name = snapshot.child("name").getValue(String.class);
+                        String color = snapshot.child("color").getValue(String.class);
+                        if (TextUtils.isEmpty(name)) name = "Danh sách chia sẻ";
+
+                        String newListId = database.child("Lists").push().getKey();
+                        if (newListId == null) return;
+
+                        TaskList newList = new TaskList(newListId, name, color, userId,
+                                System.currentTimeMillis());
+                        newList.setShareCode(code);
+                        database.child("Lists").child(newListId).setValue(newList);
+
+                        int count = 0;
+                        for (DataSnapshot child : snapshot.child("tasks").getChildren()) {
+                            Object value = child.getValue();
+                            if (!(value instanceof Map)) continue;
+
+                            String taskId = database.child("Tasks").push().getKey();
+                            if (taskId == null) continue;
+
+                            Map<String, Object> item = new HashMap<>((Map<String, Object>) value);
+                            item.put("id", taskId);
+                            item.put("userId", userId);
+                            item.put("listId", newListId);
+                            item.put("listName", name);
+                            item.put("listColor", color != null ? color : "#4C6FFF");
+                            item.put("isCompleted", false);
+                            item.put("nextSpawned", false);
+                            item.put("timestamp", System.currentTimeMillis());
+
+                            database.child("Tasks").child(taskId).setValue(item);
+                            count++;
+                        }
+
+                        Toast.makeText(getContext(),
+                                "Đã nhập \"" + name + "\" với " + count + " công việc",
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(getContext(), "Không đọc được danh sách chia sẻ",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private String generateCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Random random = new Random();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            builder.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return builder.toString();
+    }
+
+    private String safe(String value) {
+        return value != null ? value : "";
     }
 }

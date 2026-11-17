@@ -1,15 +1,20 @@
 package dpphong.ntu.appqlcv.ck;
 
+import android.app.DatePickerDialog;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -114,52 +119,61 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         applyCompletedStyle(holder, task.isCompleted());
 
         holder.cardContainer.setOnLongClickListener(v -> {
+            String[] actions = {"Chỉnh sửa", "Dời sang ngày khác", "Bắt đầu tập trung",
+                    "Thêm vào Google Calendar", "Chia sẻ công việc", "Lưu thành mẫu", "Xóa công việc"};
             new MaterialAlertDialogBuilder(v.getContext())
-                    .setTitle("Xóa công việc")
-                    .setMessage("Bạn có chắc chắn muốn xóa công việc '" + task.getTitle() + "' không?")
-                    .setIcon(R.drawable.ic_delete)
-                    .setPositiveButton("Xóa", (dialog, which) -> {
-                        if (task.getId() != null) {
-                            ReminderScheduler.cancel(v.getContext(), task.getId());
-                            FirebaseDatabase.getInstance()
-                                    .getReference("Tasks")
-                                    .child(task.getId())
-                                    .removeValue();
+                    .setTitle(task.getTitle())
+                    .setItems(actions, (dialog, which) -> {
+                        switch (which) {
+                            case 0:
+                                openEditor(v, task);
+                                break;
+                            case 1:
+                                openMoveDateDialog(v, task);
+                                break;
+                            case 2:
+                                startFocus(v, task);
+                                break;
+                            case 3:
+                                CalendarHelper.addToCalendar(v.getContext(), task);
+                                break;
+                            case 4:
+                                CalendarHelper.shareTask(v.getContext(), task);
+                                break;
+                            case 5:
+                                saveAsTemplate(v, task);
+                                break;
+                            default:
+                                confirmDelete(v, task);
+                                break;
                         }
                     })
-                    .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
                     .show();
             return true;
         });
 
-        holder.cardContainer.setOnClickListener(v -> {
-            AddTodoFragment editFragment = new AddTodoFragment();
-            Bundle bundle = new Bundle();
-            bundle.putSerializable("TASK_EDIT", task);
-            editFragment.setArguments(bundle);
-
-            AppCompatActivity activity = (AppCompatActivity) v.getContext();
-            activity.getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.calendar_container, editFragment)
-                    .addToBackStack(null)
-                    .commit();
-        });
+        holder.cardContainer.setOnClickListener(v -> openEditor(v, task));
 
         holder.layoutTaskSubtasks.setOnClickListener(v -> showSubtaskDialog(holder, task));
 
         holder.cbStatus.setOnCheckedChangeListener((buttonView, isChecked) -> {
             applyCompletedStyle(holder, isChecked);
             task.setCompleted(isChecked);
+            task.setCompletedAt(isChecked ? System.currentTimeMillis() : 0L);
 
             if (task.getId() != null) {
+                HashMap<String, Object> updates = new HashMap<>();
+                updates.put("isCompleted", isChecked);
+                updates.put("completedAt", task.getCompletedAt());
+
                 FirebaseDatabase.getInstance()
                         .getReference("Tasks")
                         .child(task.getId())
-                        .child("isCompleted")
-                        .setValue(isChecked)
+                        .updateChildren(updates)
                         .addOnFailureListener(e -> {
                             holder.cbStatus.setChecked(!isChecked);
                             task.setCompleted(!isChecked);
+                            task.setCompletedAt(0L);
                             applyCompletedStyle(holder, !isChecked);
                             Log.e("TaskAdapter", "Lỗi update Firebase: " + e.getMessage());
                         });
@@ -261,6 +275,159 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         if (position != RecyclerView.NO_POSITION) {
             notifyItemChanged(position);
         }
+    }
+
+    private void openEditor(View v, Task task) {
+        AddTodoFragment editFragment = new AddTodoFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("TASK_EDIT", task);
+        editFragment.setArguments(bundle);
+
+        AppCompatActivity activity = (AppCompatActivity) v.getContext();
+        activity.getSupportFragmentManager().beginTransaction()
+                .replace(R.id.calendar_container, editFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    /**
+     * Dời công việc sang ngày khác và đặt lại nhắc nhở theo ngày mới.
+     */
+    private void openMoveDateDialog(View v, Task task) {
+        Calendar calendar = Calendar.getInstance();
+        try {
+            String date = task.getDate();
+            if (date != null && !date.isEmpty()) {
+                java.util.Date parsed = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date);
+                if (parsed != null) calendar.setTime(parsed);
+            }
+        } catch (Exception ignored) {
+        }
+
+        new DatePickerDialog(v.getContext(), (picker, year, month, dayOfMonth) -> {
+            Calendar target = Calendar.getInstance();
+            target.set(year, month, dayOfMonth);
+            String newDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    .format(target.getTime());
+
+            HashMap<String, Object> update = new HashMap<>();
+            update.put("date", newDate);
+
+            FirebaseDatabase.getInstance().getReference("Tasks")
+                    .child(task.getId())
+                    .updateChildren(update)
+                    .addOnSuccessListener(aVoid -> {
+                        task.setDate(newDate);
+                        ContextCompat.getMainExecutor(v.getContext()).execute(() -> {
+                            Toast.makeText(v.getContext(), "Đã dời sang " + newDate,
+                                    Toast.LENGTH_SHORT).show();
+                            refreshHolderByView(v);
+                        });
+
+                        if (!TextUtils.isEmpty(task.getTime())) {
+                            ReminderScheduler.cancel(v.getContext(), task.getId());
+                            if (task.getReminderOffsets() != null) {
+                                for (Long offset : task.getReminderOffsets()) {
+                                    if (offset == null) continue;
+                                    ReminderScheduler.schedule(v.getContext(), task.getId(),
+                                            task.getTitle(), task.getDescription(), newDate,
+                                            task.getTime(), offset);
+                                }
+                            }
+                        }
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(v.getContext(),
+                            "Không dời được: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)).show();
+    }
+
+    private void startFocus(View v, Task task) {
+        FocusFragment focusFragment = new FocusFragment();
+        Bundle args = new Bundle();
+        args.putString("TASK_ID", task.getId());
+        args.putString("TASK_TITLE", task.getTitle());
+        focusFragment.setArguments(args);
+
+        AppCompatActivity activity = (AppCompatActivity) v.getContext();
+        activity.getSupportFragmentManager().beginTransaction()
+                .replace(R.id.calendar_container, focusFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    /**
+     * Lưu cấu hình công việc thành mẫu để tái sử dụng.
+     */
+    private void saveAsTemplate(View v, Task task) {
+        EditText input = new EditText(v.getContext());
+        input.setHint("Tên mẫu");
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setText(task.getTitle() != null ? task.getTitle() : "Mẫu công việc");
+        int padding = Math.round(20 * v.getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding, padding, padding);
+
+        LinearLayout container = new LinearLayout(v.getContext());
+        container.setPadding(padding, 0, padding, 0);
+        container.addView(input);
+
+        new MaterialAlertDialogBuilder(v.getContext())
+                .setTitle("Lưu thành mẫu")
+                .setMessage("Bạn có thể dùng lại mẫu này khi tạo công việc mới.")
+                .setView(container)
+                .setPositiveButton("Lưu", (dialog, which) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = task.getTitle();
+                    if (name == null || name.isEmpty()) name = "Mẫu công việc";
+                    final String templateName = name;
+
+                    String templateId = FirebaseDatabase.getInstance()
+                            .getReference("Templates").push().getKey();
+                    if (templateId == null) return;
+
+                    TaskTemplate template = new TaskTemplate();
+                    template.setId(templateId);
+                    template.setUserId(task.getUserId());
+                    template.setName(templateName);
+                    template.setTitle(task.getTitle());
+                    template.setDescription(task.getDescription());
+                    template.setPriority(task.getPriority());
+                    template.setIcon(task.getIcon());
+                    template.setRecurrence(task.getRecurrence());
+                    template.setListId(task.getListId());
+                    template.setListName(task.getListName());
+                    template.setListColor(task.getListColor());
+                    template.setCreatedAt(System.currentTimeMillis());
+
+                    FirebaseDatabase.getInstance().getReference("Templates")
+                            .child(templateId).setValue(template)
+                            .addOnSuccessListener(aVoid -> Toast.makeText(v.getContext(),
+                                    "Đã lưu mẫu: " + templateName, Toast.LENGTH_SHORT).show());
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void refreshHolderByView(View v) {
+        // Danh sách sẽ tự cập nhật khi Firebase trả dữ liệu mới (ValueEventListener).
+    }
+
+    private void confirmDelete(View v, Task task) {
+        new MaterialAlertDialogBuilder(v.getContext())
+                .setTitle("Xóa công việc")
+                .setMessage("Bạn có chắc chắn muốn xóa công việc '" + task.getTitle() + "' không?")
+                .setIcon(R.drawable.ic_delete)
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    if (task.getId() != null) {
+                        ReminderScheduler.cancel(v.getContext(), task.getId());
+                        FirebaseDatabase.getInstance()
+                                .getReference("Tasks")
+                                .child(task.getId())
+                                .removeValue();
+                    }
+                })
+                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     /**

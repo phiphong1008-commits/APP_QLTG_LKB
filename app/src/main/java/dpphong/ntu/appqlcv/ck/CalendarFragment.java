@@ -55,6 +55,7 @@ public class CalendarFragment extends Fragment {
         tvSelectedDate = view.findViewById(R.id.tv_selected_date);
         TextView tvTodaySubtitle = view.findViewById(R.id.tv_today_subtitle);
         TextView btnToday = view.findViewById(R.id.btn_today);
+        TextView btnWeek = view.findViewById(R.id.btn_week);
         FloatingActionButton fabAdd = view.findViewById(R.id.fab_add_calendar_task);
 
         // 1. Khởi tạo danh sách rỗng để tránh NullPointerException
@@ -95,9 +96,13 @@ public class CalendarFragment extends Fragment {
             filterTasksByDate(currentSelectedDate);
         });
 
+        btnWeek.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
+                .replace(R.id.calendar_container, new WeekFragment())
+                .addToBackStack(null)
+                .commit());
+
         // 7. Thêm việc ngay cho ngày đang chọn
-        fabAdd.setOnClickListener(v -> {
-            AddTodoFragment addFragment = new AddTodoFragment();
+        fabAdd.setOnClickListener(v -> {            AddTodoFragment addFragment = new AddTodoFragment();
             Bundle args = new Bundle();
             args.putString("TASK_DATE", currentSelectedDate);
             addFragment.setArguments(args);
