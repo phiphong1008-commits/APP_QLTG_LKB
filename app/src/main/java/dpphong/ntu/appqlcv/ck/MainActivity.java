@@ -1,26 +1,41 @@
 package dpphong.ntu.appqlcv.ck; // Giữ nguyên package chuẩn của bạn
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        float scale = Prefs.getFontScale(newBase);
+        Configuration configuration = new Configuration(newBase.getResources().getConfiguration());
+        configuration.fontScale = scale;
+        super.attachBaseContext(newBase.createConfigurationContext(configuration));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,63 +47,94 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("message");
 
-        myRef.setValue("Hello, World!");
-        // 1. Ánh xạ Bottom Nav theo đúng ID trong file XML của bạn
+        setupSystemBars();
+
+        // 1. Ánh xạ Bottom Nav theo đúng ID trong file XML
         BottomNavigationView botnav = findViewById(R.id.bottomNavigationView);
 
-        // 2. MẶC ĐỊNH KHI VỪA MỞ APP: Nạp sẵn màn hình Lịch trình vào container
-        // để người dùng thấy giao diện ngay mà không bị trống màn hình
+        // 2. MẶC ĐỊNH KHI VỪA MỞ APP: Nạp sẵn màn hình Lịch trình
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.calendar_container, new CalendarFragment())
-                    .commit();
+            switchFragment(new CalendarFragment(), false);
         }
 
-        // 3. Logic bắt sự kiện click tráo đổi Fragment theo đúng ID bạn cung cấp
+        // 3. Logic bắt sự kiện click tráo đổi Fragment
         botnav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                Fragment select_frag = null;
+                Fragment select_frag;
                 FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
                 int itemid = menuItem.getItemId();
 
-                // Khớp đúng ID: calendar, account, diary từ file menu của bạn
+                // Khớp đúng ID: calendar, todo, diary, account từ file menu
                 if (itemid == R.id.calendar) {
-                    select_frag = new CalendarFragment(); // Màn hình bộ lịch ô vuông lồng icon
-                }
-                else if (itemid == R.id.todo) {
-                     select_frag = new TodoFragment(); // Màn hình Tài khoản (bạn tạo sau)
-                }
-
-                else if (itemid == R.id.diary) {
-                     select_frag = new DiaryFragment(); // Màn hình Nhật ký/Công việc (bạn tạo sau)
-                }
-                else if (itemid == R.id.account) {
+                    select_frag = new CalendarFragment();
+                } else if (itemid == R.id.todo) {
+                    select_frag = new TodoFragment();
+                } else if (itemid == R.id.diary) {
+                    select_frag = new DiaryFragment();
+                } else if (itemid == R.id.account) {
                     if (currentUser != null) {
-                        // TRƯỜNG HỢP 1: Đã đăng nhập -> Mở thẳng trang ProfileFragment
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.calendar_container, new ProfileFragment()) // Thay id container cho đúng với code của bạn
-                                .commit();
+                        select_frag = new ProfileFragment();
                     } else {
-                        // TRƯỜNG HỢP 2: Chưa đăng nhập -> Mở trang LoginFragment
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.calendar_container, new LoginFragment())
-                                .commit();
+                        select_frag = new LoginFragment();
                     }
-                     // Màn hình Tài khoản (bạn tạo sau)
+                } else {
+                    return false;
                 }
 
-                // 4. Nạp Fragment được chọn vào đúng hộp chứa calendar_container trong activity_main.xml
-                if (select_frag != null) {
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.calendar_container, select_frag)
-                            .commit();
-                }
+                switchFragment(select_frag, true);
                 return true;
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Kiểm tra nhắc theo vị trí mỗi lần quay lại app (không cần Geofencing).
+        LocationHelper.checkNearbyTasks(this);
+    }
+
+    /**
+     * Xử lý tràn viền: đẩy nội dung xuống dưới thanh trạng thái và
+     * chừa khoảng trống cho thanh điều hướng hệ thống.
+     */
+    private void setupSystemBars() {
+        WindowInsetsControllerCompat controller =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        int nightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        boolean isNight = nightMode == Configuration.UI_MODE_NIGHT_YES;
+        controller.setAppearanceLightStatusBars(!isNight);
+        controller.setAppearanceLightNavigationBars(!isNight);
+
+        View container = findViewById(R.id.calendar_container);
+        View bottomNav = findViewById(R.id.bottomNavigationView);
+
+        ViewCompat.setOnApplyWindowInsetsListener(container, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, bars.top, 0, 0);
+            return insets;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, 0, 0, bars.bottom);
+            return insets;
+        });
+    }
+
+    /**
+     * Chuyển màn hình với hiệu ứng mờ nhẹ, đồng thời dọn các màn hình
+     * nhập liệu đang mở dở khi người dùng đổi tab.
+     */
+    private void switchFragment(Fragment fragment, boolean clearBackStack) {
+        FragmentManager fm = getSupportFragmentManager();
+        if (clearBackStack) {
+            fm.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        }
+        fm.beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.calendar_container, fragment)
+                .commit();
     }
 }

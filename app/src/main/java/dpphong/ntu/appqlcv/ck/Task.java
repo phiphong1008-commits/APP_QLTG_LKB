@@ -3,6 +3,7 @@ package dpphong.ntu.appqlcv.ck;
 import com.google.firebase.database.PropertyName;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Task implements Serializable {
     private String id;
@@ -16,11 +17,27 @@ public class Task implements Serializable {
     private long timestamp;
     private String userId;
 
+    // P0: danh sách, lặp lại, nhắc nhiều mốc, việc con
+    private String listId;
+    private String listName;
+    private String listColor;
+    private String recurrence = "none";
+    private List<Long> reminderOffsets;
+    private List<Subtask> subtasks;
+    private boolean nextSpawned;
+
+    // P1/P2: vị trí, thời điểm hoàn thành
+    private String locationName;
+    private Double locationLat;
+    private Double locationLng;
+    private long completedAt;
+
     // BẮT BUỘC: Constructor rỗng dành cho Firebase
     public Task() {
     }
 
-    public Task(String id, String title, String description, String date, String time, String priority,String icon, boolean isCompleted, long timestamp, String userId) {
+    public Task(String id, String title, String description, String date, String time, String priority,
+                String icon, boolean isCompleted, long timestamp, String userId) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -43,13 +60,10 @@ public class Task implements Serializable {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public String getIcon() {
-        return icon;
-    }
 
-    public void setIcon(String icon) {
-        this.icon = icon;
-    }
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
+
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
 
@@ -59,13 +73,45 @@ public class Task implements Serializable {
     public String getPriority() { return priority; }
     public void setPriority(String priority) { this.priority = priority; }
 
-
-
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+
+    public String getListId() { return listId; }
+    public void setListId(String listId) { this.listId = listId; }
+
+    public String getListName() { return listName; }
+    public void setListName(String listName) { this.listName = listName; }
+
+    public String getListColor() { return listColor; }
+    public void setListColor(String listColor) { this.listColor = listColor; }
+
+    public String getRecurrence() { return recurrence; }
+    public void setRecurrence(String recurrence) { this.recurrence = recurrence; }
+
+    public List<Long> getReminderOffsets() { return reminderOffsets; }
+    public void setReminderOffsets(List<Long> reminderOffsets) { this.reminderOffsets = reminderOffsets; }
+
+    public List<Subtask> getSubtasks() { return subtasks; }
+    public void setSubtasks(List<Subtask> subtasks) { this.subtasks = subtasks; }
+
+    public boolean isNextSpawned() { return nextSpawned; }
+    public void setNextSpawned(boolean nextSpawned) { this.nextSpawned = nextSpawned; }
+
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
+
+    public Double getLocationLat() { return locationLat; }
+    public void setLocationLat(Double locationLat) { this.locationLat = locationLat; }
+
+    public Double getLocationLng() { return locationLng; }
+    public void setLocationLng(Double locationLng) { this.locationLng = locationLng; }
+
+    public long getCompletedAt() { return completedAt; }
+    public void setCompletedAt(long completedAt) { this.completedAt = completedAt; }
+
     @PropertyName("isCompleted")
     public boolean isCompleted() {
         return isCompleted;

@@ -1,6 +1,8 @@
 package dpphong.ntu.appqlcv.ck;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -25,7 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView tvProfileName, tvProfileEmail;
+    private TextView tvProfileName, tvProfileEmail, tvProfileAvatar;
     private TextView tvStatTotal, tvStatCompleted, tvStatPending;
     private Button btnLogout;
     private FirebaseAuth mAuth;
@@ -40,6 +43,7 @@ public class ProfileFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         tvProfileName = view.findViewById(R.id.tv_profile_name);
         tvProfileEmail = view.findViewById(R.id.tv_profile_email);
+        tvProfileAvatar = view.findViewById(R.id.tv_profile_avatar);
         tvStatTotal = view.findViewById(R.id.tv_stat_total);
         tvStatCompleted = view.findViewById(R.id.tv_stat_completed);
         tvStatPending = view.findViewById(R.id.tv_stat_pending);
@@ -52,6 +56,30 @@ public class ProfileFragment extends Fragment {
         loadTaskStatistics();
         btnGoToTodo = view.findViewById(R.id.btn_go_to_todo);
         btnGoToDiary = view.findViewById(R.id.btn_go_to_diary);
+
+        view.findViewById(R.id.btn_edit_profile).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new EditProfileFragment())
+                        .addToBackStack(null)
+                        .commit());
+
+        view.findViewById(R.id.btn_manage_lists).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new ListsFragment())
+                        .addToBackStack(null)
+                        .commit());
+
+        view.findViewById(R.id.btn_tools).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new ToolsFragment())
+                        .addToBackStack(null)
+                        .commit());
+
+        view.findViewById(R.id.btn_settings).setOnClickListener(v ->
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.calendar_container, new SettingsFragment())
+                        .addToBackStack(null)
+                        .commit());
 
 // Xử lý khi bấm "Quản lý công việc" -> Chuyển sang tab Todo
         btnGoToTodo.setOnClickListener(v -> {
@@ -88,16 +116,56 @@ public class ProfileFragment extends Fragment {
 
     private void loadUserInfo() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            tvProfileEmail.setText(currentUser.getEmail());
+        if (currentUser == null) return;
 
-            String displayName = currentUser.getDisplayName();
-            if (displayName != null && !displayName.isEmpty()) {
-                tvProfileName.setText(displayName);
-            } else if (currentUser.getEmail() != null) {
-                // Cắt phần tên trước ký tự @ trong email nếu không có DisplayName
-                tvProfileName.setText(currentUser.getEmail().split("@")[0]);
-            }
+        tvProfileEmail.setText(currentUser.getEmail());
+
+        String displayName = currentUser.getDisplayName();
+        String name = null;
+        if (displayName != null && !displayName.isEmpty()) {
+            name = displayName;
+        } else if (currentUser.getEmail() != null) {
+            name = currentUser.getEmail().split("@")[0];
+        }
+
+        if (name != null) {
+            tvProfileName.setText(name);
+            updateAvatarLetter(name);
+        }
+
+        // Đọc tên và màu đại diện đã lưu trong Firebase
+        FirebaseDatabase.getInstance().getReference("Users").child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!isAdded()) return;
+
+                        String savedName = snapshot.child("displayName").getValue(String.class);
+                        String savedColor = snapshot.child("avatarColor").getValue(String.class);
+
+                        if (savedName != null && !savedName.isEmpty()) {
+                            tvProfileName.setText(savedName);
+                            updateAvatarLetter(savedName);
+                        }
+                        if (savedColor != null && !savedColor.isEmpty()) {
+                            try {
+                                ViewCompat.setBackgroundTintList(tvProfileAvatar,
+                                        ColorStateList.valueOf(Color.parseColor(savedColor)));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+    }
+
+    private void updateAvatarLetter(String name) {
+        String trimmed = name.trim();
+        if (!trimmed.isEmpty()) {
+            tvProfileAvatar.setText(trimmed.substring(0, 1).toUpperCase());
         }
     }
 
