@@ -54,7 +54,7 @@ public class AddTodoFragment extends Fragment {
     private RadioGroup rgPriority;
     private RadioGroup rgTaskIcons;
     private Button btnSave;
-    private ImageButton btnAddSubtask;
+    private android.view.View btnAddSubtask;
     private LinearLayout containerSubtasks;
     private MaterialAutoCompleteTextView actvTaskList;
     private ChipGroup chipGroupRecurrence, chipGroupReminders;
